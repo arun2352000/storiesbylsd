@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "title": "Dinesh & Gayathri",
+        "date": "June 8, 2025",
+        "thumbnail": "https://images.unsplash.com/photo-1621621667797-e06afc217fb0?q=80&w=2940&auto=format&fit=crop",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+    },
+    {
+        "id": 2,
+        "title": "Navaneeth & Deepthi",
+        "date": "November 20, 2024",
+        "thumbnail": "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=80&w=2787&auto=format&fit=crop",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+    },
+    {
+        "id": 3,
+        "title": "Jayaganthan & Girija",
+        "date": "June 30, 2023",
+        "thumbnail": "https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=2787&auto=format&fit=crop",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+    },
+    {
+        "id": 4,
+        "title": "Vijay & Sahana",
+        "date": "January 20, 2024",
+        "thumbnail": "https://images.unsplash.com/photo-1511285560982-1351cdeb9821?q=80&w=2940&auto=format&fit=crop",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4"
+    },
+    {
+        "id": 5,
+        "title": "Gayathri & Prabhu",
+        "date": "June 30, 2023",
+        "thumbnail": "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=2940&auto=format&fit=crop",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4"
+    },
+    {
+        "id": 6,
+        "title": "Aravind & Keerthi",
+        "date": "September 31, 2023",
+        "thumbnail": "https://images.unsplash.com/photo-1591604466107-ec97de577aff?q=80&w=2940&auto=format&fit=crop",
+        "videoUrl": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+    }
+]
