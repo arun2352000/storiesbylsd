@@ -11,6 +11,8 @@ import ImageFolio from '../components/home/ImageFolio';
 import AboutUsPreview from '../components/home/AboutUsPreview';
 import ContactForm from '../components/common/ContactForm';
 import contactBg from '../assets/image/Backgrou image/image 2.png';
+import heroPosterHorizontal from '../assets/image/hero-poster-horizontal.webp';
+import heroPosterVertical from '../assets/image/hero-poster.webp';
 
 
 const Home = () => {
@@ -70,6 +72,16 @@ const Home = () => {
             }
         }
     };
+
+    // Handle immediate play when hero video source is hydrated from API
+    useEffect(() => {
+        if (heroVideoSrc && videoRef.current) {
+            videoRef.current.muted = true;
+            videoRef.current.play().catch((err) => {
+                console.log("Initial autoplay deferred:", err);
+            });
+        }
+    }, [heroVideoSrc]);
 
     // Handle video pause when menu is open
     useEffect(() => {
@@ -157,34 +169,37 @@ const Home = () => {
 
     return (
         <MainLayout>
-            {/* Hero Section - Loads exclusively from API with Instant Poster Fallback */}
-            {(heroVideoSrc || siteConfig?.heroVideoThumb?.url) ? (
-                <ScrollReveal delay={100} duration={1000}>
-                    <section 
-                        className="relative h-screen w-full bg-[#424530] overflow-hidden group bg-cover bg-center"
-                        style={siteConfig?.heroVideoThumb?.url ? { backgroundImage: `url('${siteConfig.heroVideoThumb.url}')` } : undefined}
-                    >
-                        {heroVideoSrc && (
-                            <video
-                                key={heroVideoSrc}
-                                ref={videoRef}
-                                src={heroVideoSrc}
-                                poster={siteConfig?.heroVideoThumb?.url || undefined}
-                                className="absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90"
-                                loop
-                                autoPlay
-                                muted={isMuted}
-                                preload="auto"
-                                playsInline
-                            >
-                                <source src={heroVideoSrc} type="video/webm" />
-                                <source src={heroVideoSrc} type="video/mp4" />
-                                Your browser does not support the video tag.
-                            </video>
-                        )}
-                    </section>
-                </ScrollReveal>
-            ) : null}
+            {/* Hero Section - Loads exclusively from API with Exact Opening Frame Poster */}
+            <ScrollReveal delay={100} duration={1000}>
+                <section 
+                    className="relative h-screen w-full bg-[#424530] overflow-hidden group bg-cover bg-center"
+                    style={{ backgroundImage: `url('${siteConfig?.heroVideoThumb?.url || heroPosterHorizontal}')` }}
+                >
+                    {heroVideoSrc && (
+                        <video
+                            key={heroVideoSrc}
+                            ref={videoRef}
+                            src={heroVideoSrc}
+                            poster={siteConfig?.heroVideoThumb?.url || heroPosterVertical}
+                            className="absolute top-1/2 left-1/2 w-[100vh] h-[100vw] -translate-x-1/2 -translate-y-1/2 -rotate-90 object-cover"
+                            loop
+                            autoPlay
+                            muted
+                            preload="metadata"
+                            playsInline
+                            onCanPlay={(e) => {
+                                e.target.muted = true;
+                                e.target.play().catch(() => {});
+                            }}
+                        >
+                            <source src={heroVideoSrc} type="video/webm" />
+                            <source src={heroVideoSrc} type="video/mp4" />
+                            Your browser does not support the video tag.
+                        </video>
+                    )}
+                    <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+                </section>
+            </ScrollReveal>
 
             {/* 2. Image Folio Section */}
             {siteConfig?.folioImages && siteConfig.folioImages.length > 0 && (

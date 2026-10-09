@@ -12,14 +12,15 @@ const ImageFolio = ({ images }) => {
         return (
             <div 
                 key={img.id || index} 
-                className={`relative overflow-hidden group bg-[#424530] ${className}`}
+                className={`relative overflow-hidden group bg-[#383a29] ${className}`}
                 style={heightStyle}
             >
                 <img 
                     src={img.url || img.downloadUrl} 
-                    alt={`Folio ${index + 1}`} 
+                    alt={`Wedding photography portfolio photo ${index + 1}`} 
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     loading="lazy"
+                    decoding="async"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 pointer-events-none" />
             </div>
@@ -30,12 +31,16 @@ const ImageFolio = ({ images }) => {
     const renderFlowTile = (img, index) => {
         if (!img) return null;
         return (
-            <div key={img.id || index} className="relative overflow-hidden group bg-[#424530] w-full">
+            <div 
+                key={img.id || index} 
+                className="relative overflow-hidden group bg-[#383a29] w-full min-h-[180px] sm:min-h-[240px]"
+            >
                 <img 
                     src={img.url || img.downloadUrl} 
-                    alt={`Folio ${index + 1}`} 
+                    alt={`Wedding photography portfolio photo ${index + 1}`} 
                     className="w-full h-auto object-cover block transition-transform duration-700 ease-out group-hover:scale-105"
                     loading="lazy"
+                    decoding="async"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 pointer-events-none" />
             </div>

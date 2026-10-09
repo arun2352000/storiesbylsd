@@ -77,7 +77,7 @@ const AboutUs = () => {
                         <div className="space-y-4 text-gray-300 font-light text-sm md:text-base leading-relaxed">
                             <p>
                                 We're a group of passionate storytellers armed with cameras and fueled by love. Based in Chennai, LSD
-                                production believes that every wedding is a cinematic narrative worth cherishing.
+                                Production believes that every wedding is a cinematic narrative worth cherishing.
                             </p>
                             <p>
                                 With youthful energy, creative vision, and a keen eye for emotion, we capture your most authentic,
