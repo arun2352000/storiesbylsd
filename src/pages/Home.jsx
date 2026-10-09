@@ -171,17 +171,24 @@ const Home = () => {
         <MainLayout>
             {/* Hero Section - Loads exclusively from API with Exact Opening Frame Poster */}
             <ScrollReveal delay={100} duration={1000}>
-                <section 
-                    className="relative h-screen w-full bg-[#424530] overflow-hidden group bg-cover bg-center"
-                    style={{ backgroundImage: `url('${siteConfig?.heroVideoThumb?.url || heroPosterHorizontal}')` }}
-                >
+                <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
+                    {/* Fallback poster: vertical on mobile, horizontal on desktop/tablets */}
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center md:hidden"
+                        style={{ backgroundImage: `url('${siteConfig?.heroVideoThumb?.url || heroPosterVertical}')` }}
+                    />
+                    <div 
+                        className="absolute inset-0 bg-cover bg-center hidden md:block"
+                        style={{ backgroundImage: `url('${siteConfig?.heroVideoThumb?.url || heroPosterHorizontal}')` }}
+                    />
+
                     {heroVideoSrc && (
                         <video
                             key={heroVideoSrc}
                             ref={videoRef}
                             src={heroVideoSrc}
                             poster={siteConfig?.heroVideoThumb?.url || heroPosterVertical}
-                            className="absolute top-1/2 left-1/2 w-[100vh] h-[100vw] -translate-x-1/2 -translate-y-1/2 -rotate-90 object-cover"
+                            className="absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90"
                             loop
                             autoPlay
                             muted

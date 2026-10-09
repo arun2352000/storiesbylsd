@@ -11,19 +11,16 @@ const Navbar = () => {
         <>
             <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16 sm:h-20">
-                        {/* Left spacer for centering logo */}
-                        <div className="w-10 sm:w-12 hidden sm:block"></div>
-
-                        {/* Logo */}
-                        <div className="flex-shrink-0 flex items-center justify-center flex-1">
+                    <div className="relative flex justify-between items-center h-16 sm:h-20">
+                        {/* Centered Logo */}
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-auto">
                             <Link to="/" className="flex items-center">
                                 <img src={logo} alt="LSD Logo" className="h-10 sm:h-12 w-auto" />
                             </Link>
                         </div>
 
-                        {/* Menu Button */}
-                        <div className="flex items-center">
+                        {/* Menu Button (aligned to right) */}
+                        <div className="flex items-center ml-auto z-10">
                             <Button
                                 variant="ghost"
                                 size="icon"
