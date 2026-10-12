@@ -1,21 +1,102 @@
 // About Us Page
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import MainLayout from '../layouts/MainLayout';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 import heroBackground from '../assets/image/Backgrou image/AND03973 1.png';
 import howWeWorkBg from '../assets/image/Backgrou image/Layer 1 1.png';
 
+const DEFAULT_TEAM_MEMBERS = [
+    { id: 'tm_1', name: 'ISHVAR', role: 'Photographer', image: null },
+    { id: 'tm_2', name: 'RAJESH', role: 'Photographer', image: null },
+    { id: 'tm_3', name: 'SAI', role: 'Photographer', image: null },
+    { id: 'tm_4', name: 'GOWRI', role: 'Photographer', image: null },
+    { id: 'tm_5', name: 'ANDREW', role: 'Photographer', image: null },
+    { id: 'tm_6', name: 'DHANUSH', role: 'Photographer', image: null },
+    { id: 'tm_7', name: 'HARI', role: 'Photographer', image: null },
+    { id: 'tm_8', name: 'SHRAVANN', role: 'Photographer', image: null },
+];
+
+const DEFAULT_STORIES = [
+    {
+        id: 'story_1',
+        title: 'Jayanthi & Karthik',
+        image: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+        id: 'story_2',
+        title: 'Kavitha & Sathish',
+        image: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?q=80&w=800&auto=format&fit=crop',
+    },
+    {
+        id: 'story_3',
+        title: 'Vijay & Rohini',
+        image: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop',
+    },
+];
+
+const extractTeamMembers = (sc, defaultList = DEFAULT_TEAM_MEMBERS) => {
+    if (!sc || !sc.teamMembers) return defaultList;
+    if (Array.isArray(sc.teamMembers) && sc.teamMembers.length > 0) return sc.teamMembers;
+    if (sc.teamMembers && Array.isArray(sc.teamMembers.list) && sc.teamMembers.list.length > 0) return sc.teamMembers.list;
+    if (sc.teamMembers && Array.isArray(sc.teamMembers.members) && sc.teamMembers.members.length > 0) return sc.teamMembers.members;
+    return defaultList;
+};
+
 const AboutUs = () => {
-    const teamMembers = [
-        { name: 'ISHVAR', role: 'Photographer' },
-        { name: 'RAJESH', role: 'Photographer' },
-        { name: 'SAI', role: 'Photographer' },
-        { name: 'GOWRI', role: 'Photographer' },
-        { name: 'ANDREW', role: 'Photographer' },
-        { name: 'DHANUSH', role: 'Photographer' },
-        { name: 'HARI', role: 'Photographer' },
-        { name: 'SHRAVANN', role: 'Photographer' },
-    ];
+    const navigate = useNavigate();
+    const [teamMembers, setTeamMembers] = useState(() => {
+        try {
+            const cached = localStorage.getItem('lsd_site_config');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                return extractTeamMembers(parsed);
+            }
+        } catch {}
+        return DEFAULT_TEAM_MEMBERS;
+    });
+
+    const [stories, setStories] = useState(DEFAULT_STORIES);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [projectsData, siteConfigData] = await Promise.all([
+                    api.getAllProjects(),
+                    api.getSiteConfig()
+                ]);
+
+                if (siteConfigData) {
+                    try {
+                        localStorage.setItem('lsd_site_config', JSON.stringify(siteConfigData));
+                    } catch {}
+                    const extracted = extractTeamMembers(siteConfigData);
+                    if (extracted && extracted.length > 0) {
+                        setTeamMembers(extracted);
+                    }
+                }
+
+                if (Array.isArray(projectsData) && projectsData.length > 0) {
+                    // Filter portfolio items toggled for About Us page
+                    const aboutStories = projectsData.filter(p => p.aboutPage === true);
+                    if (aboutStories.length > 0) {
+                        setStories(aboutStories);
+                    } else {
+                        // Fallback to homePage items or first 3 projects
+                        const fallback = projectsData.filter(p => p.homePage === true).slice(0, 3);
+                        setStories(fallback.length > 0 ? fallback : projectsData.slice(0, 3));
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load About Us dynamic data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const workPillars = [
         {
@@ -36,20 +117,36 @@ const AboutUs = () => {
         },
     ];
 
-    const stories = [
-        {
-            couple: 'Jayanthi & Karthik',
-            image: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=80&w=800&auto=format&fit=crop',
-        },
-        {
-            couple: 'Kavitha & Sathish',
-            image: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?q=80&w=800&auto=format&fit=crop',
-        },
-        {
-            couple: 'Vijay & Rohini',
-            image: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop',
-        },
-    ];
+    const renderTeamMemberCard = (member, index) => {
+        const photoUrl = member.image?.url || member.image?.downloadUrl || (typeof member.image === 'string' ? member.image : null);
+
+        return (
+            <div key={member.id || index} className="text-center group">
+                <div className="bg-gray-800 rounded-lg aspect-[3/4] mb-4 overflow-hidden relative shadow-md">
+                    {photoUrl ? (
+                        <img
+                            src={photoUrl}
+                            alt={member.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            loading="lazy"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-600 bg-gray-900">
+                            <svg className="w-16 h-16 opacity-40" fill="currentColor" viewBox="0 0 20 20">
+                                <path
+                                    fillRule="evenodd"
+                                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                        </div>
+                    )}
+                </div>
+                <h3 className="text-sm md:text-base font-light tracking-wide uppercase text-[#FFEFCD]">{member.name}</h3>
+                <p className="text-xs md:text-sm text-gray-400 mt-0.5">{member.role}</p>
+            </div>
+        );
+    };
 
     return (
         <MainLayout>
@@ -118,63 +215,28 @@ const AboutUs = () => {
             <section className="bg-brand-dark text-white py-12 sm:py-16 px-4 md:px-8">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-light mb-8 sm:mb-12 tracking-wide text-center text-[#FFEFCD]">MEET THE TEAM</h2>
+                    
+                    {/* First 6 members (2 rows of 3 on desktop, 3 rows of 2 on mobile) */}
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto mb-6 sm:mb-8">
-                        {teamMembers.slice(0, 3).map((member, index) => (
-                            <div key={index} className="text-center">
-                                <div className="bg-gray-800 rounded-lg aspect-[3/4] mb-4 overflow-hidden">
-                                    <div className="w-full h-full flex items-center justify-center text-gray-600">
-                                        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <h3 className="text-sm md:text-base font-light tracking-wide uppercase text-[#FFEFCD]">{member.name}</h3>
-                                <p className="text-xs md:text-sm text-gray-400">{member.role}</p>
-                            </div>
-                        ))}
+                        {teamMembers.slice(0, 3).map((member, index) => renderTeamMemberCard(member, index))}
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto mb-6 sm:mb-8">
-                        {teamMembers.slice(3, 6).map((member, index) => (
-                            <div key={index + 3} className="text-center">
-                                <div className="bg-gray-800 rounded-lg aspect-[3/4] mb-4 overflow-hidden">
-                                    <div className="w-full h-full flex items-center justify-center text-gray-600">
-                                        <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </div>
-                                </div>
-                                <h3 className="text-sm md:text-base font-light tracking-wide uppercase text-[#FFEFCD]">{member.name}</h3>
-                                <p className="text-xs md:text-sm text-gray-400">{member.role}</p>
-                            </div>
-                        ))}
-                    </div>
+                    
+                    {teamMembers.length > 3 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto mb-6 sm:mb-8">
+                            {teamMembers.slice(3, 6).map((member, index) => renderTeamMemberCard(member, index + 3))}
+                        </div>
+                    )}
+
+                    {/* Centered remaining members (e.g. 7 & 8) */}
                     {teamMembers.length > 6 && (
-                        <div className="grid grid-cols-2 gap-4 sm:gap-8 md:gap-12 max-w-md mx-auto">
-                            {teamMembers.slice(6, 8).map((member, index) => (
-                                <div key={index + 6} className="text-center">
-                                    <div className="bg-gray-800 rounded-lg aspect-[3/4] mb-4 overflow-hidden">
-                                        <div className="w-full h-full flex items-center justify-center text-gray-600">
-                                            <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                    <h3 className="text-sm md:text-base font-light tracking-wide uppercase text-[#FFEFCD]">{member.name}</h3>
-                                    <p className="text-xs md:text-sm text-gray-400">{member.role}</p>
-                                </div>
-                            ))}
+                        <div className={`grid gap-4 sm:gap-8 md:gap-12 mx-auto ${
+                            teamMembers.length - 6 === 1 
+                                ? 'max-w-xs grid-cols-1' 
+                                : teamMembers.length - 6 === 2 
+                                ? 'max-w-md grid-cols-2' 
+                                : 'max-w-4xl grid-cols-2 sm:grid-cols-2 md:grid-cols-3'
+                        }`}>
+                            {teamMembers.slice(6).map((member, index) => renderTeamMemberCard(member, index + 6))}
                         </div>
                     )}
                 </div>
@@ -187,18 +249,33 @@ const AboutUs = () => {
                         Stories We've Crafted
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                        {stories.map((story, index) => (
-                            <div key={index} className="group cursor-pointer">
-                                <div className="rounded-lg overflow-hidden mb-4 aspect-[4/5]">
-                                    <img
-                                        src={story.image}
-                                        alt={story.couple}
-                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                    />
+                        {stories.map((story, index) => {
+                            const storyImage = story.heroImage?.url || story.heroImage?.downloadUrl || (typeof story.heroImage === 'string' ? story.heroImage : null) || story.image;
+                            const storyTitle = story.title || story.couple;
+                            const storyId = story.id || story._id;
+
+                            return (
+                                <div 
+                                    key={storyId || index} 
+                                    onClick={() => {
+                                        if (storyId && !storyId.startsWith('story_')) {
+                                            navigate(`/project/${storyId}`);
+                                        }
+                                    }}
+                                    className={`group ${storyId && !storyId.startsWith('story_') ? 'cursor-pointer' : ''}`}
+                                >
+                                    <div className="rounded-lg overflow-hidden mb-4 aspect-[4/5] bg-gray-900 shadow-md">
+                                        <img
+                                            src={storyImage}
+                                            alt={storyTitle}
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            loading="lazy"
+                                        />
+                                    </div>
+                                    <p className="text-center text-sm font-light text-[#FFEFCD] group-hover:text-white transition-colors">{storyTitle}</p>
                                 </div>
-                                <p className="text-center text-sm font-light">{story.couple}</p>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                     <div className="text-center">
                         <Link

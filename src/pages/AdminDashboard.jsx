@@ -301,6 +301,25 @@ const convertVideoToWebM = (file, onProgress) => {
     });
 };
 
+const DEFAULT_TEAM_MEMBERS = [
+    { id: 'tm_1', name: 'ISHVAR', role: 'Photographer', image: null },
+    { id: 'tm_2', name: 'RAJESH', role: 'Photographer', image: null },
+    { id: 'tm_3', name: 'SAI', role: 'Photographer', image: null },
+    { id: 'tm_4', name: 'GOWRI', role: 'Photographer', image: null },
+    { id: 'tm_5', name: 'ANDREW', role: 'Photographer', image: null },
+    { id: 'tm_6', name: 'DHANUSH', role: 'Photographer', image: null },
+    { id: 'tm_7', name: 'HARI', role: 'Photographer', image: null },
+    { id: 'tm_8', name: 'SHRAVANN', role: 'Photographer', image: null },
+];
+
+const extractTeamMembers = (sc, defaultList = DEFAULT_TEAM_MEMBERS) => {
+    if (!sc || !sc.teamMembers) return defaultList;
+    if (Array.isArray(sc.teamMembers) && sc.teamMembers.length > 0) return sc.teamMembers;
+    if (sc.teamMembers && Array.isArray(sc.teamMembers.list) && sc.teamMembers.list.length > 0) return sc.teamMembers.list;
+    if (sc.teamMembers && Array.isArray(sc.teamMembers.members) && sc.teamMembers.members.length > 0) return sc.teamMembers.members;
+    return defaultList;
+};
+
 const AdminDashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('portfolio');
@@ -320,6 +339,14 @@ const AdminDashboard = () => {
     const [isTeamDirty, setIsTeamDirty] = useState(false);
     const [isHomeNavOpen, setIsHomeNavOpen] = useState(true);
 
+    // Meet The Team (About Us) States
+    const [managedTeamMembers, setManagedTeamMembers] = useState(DEFAULT_TEAM_MEMBERS);
+    const [isTeamMembersDirty, setIsTeamMembersDirty] = useState(false);
+    const [isAddingTeamMember, setIsAddingTeamMember] = useState(false);
+    const [newMemberName, setNewMemberName] = useState('');
+    const [newMemberRole, setNewMemberRole] = useState('Photographer');
+    const [newMemberPhoto, setNewMemberPhoto] = useState(null);
+
     const [loading, setLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -336,7 +363,7 @@ const AdminDashboard = () => {
     const [pendingSelectionImages, setPendingSelectionImages] = useState(null);
     const [selectedSelectionIndices, setSelectedSelectionIndices] = useState(new Set());
 
-    const [newPortfolio, setNewPortfolio] = useState({ title: '', date: '', homePage: false });
+    const [newPortfolio, setNewPortfolio] = useState({ title: '', date: '', homePage: false, aboutPage: false });
     const [portfolioHero, setPortfolioHero] = useState(null);
     const [portfolioImages, setPortfolioImages] = useState([]);
 
@@ -384,8 +411,10 @@ const AdminDashboard = () => {
             } else {
                 setTeamGrid('2x3');
             }
+            setManagedTeamMembers(extractTeamMembers(sc));
             setIsFolioDirty(false);
             setIsTeamDirty(false);
+            setIsTeamMembersDirty(false);
         } catch (error) {
             console.error(error);
             if (error.message.includes('401')) {
@@ -435,6 +464,10 @@ const AdminDashboard = () => {
                         })));
                     }
                 }
+                const members = extractTeamMembers(sc);
+                if (!isTeamMembersDirty || forceOrder) {
+                    setManagedTeamMembers(members);
+                }
                 if (sc.teamGrid && !isTeamDirty) {
                     setTeamGrid(sc.teamGrid);
                 }
@@ -445,7 +478,7 @@ const AdminDashboard = () => {
     };
 
     useEffect(() => {
-        if (activeTab.startsWith('home_')) {
+        if (activeTab.startsWith('home_') || activeTab === 'team_members') {
             refreshSiteConfig();
         }
     }, [activeTab]);
@@ -559,6 +592,154 @@ const AdminDashboard = () => {
             loadData();
         } catch (error) {
             toast.error(`Failed to update ${field}`);
+        }
+    };
+
+    const handleToggleAboutPage = async (id, currentVal) => {
+        const newVal = !currentVal;
+        setPortfolioItems(prev => prev.map(p => p.id === id ? { ...p, aboutPage: newVal } : p));
+        try {
+            await adminApi.updatePortfolioItem(id, { aboutPage: newVal });
+            toast.success(newVal ? "Featured on About Us (Stories)!" : "Removed from About Us (Stories)");
+        } catch (error) {
+            setPortfolioItems(prev => prev.map(p => p.id === id ? { ...p, aboutPage: currentVal } : p));
+            toast.error("Failed to update: " + error.message);
+        }
+    };
+
+    // Meet The Team Handlers
+    const handleSaveTeamMembers = async () => {
+        const toastId = toast.loading("Saving Meet The Team...");
+        try {
+            await adminApi.updateSiteConfig({ teamMembers: { list: managedTeamMembers } }, siteConfig ? siteConfig.id : null);
+            setIsTeamMembersDirty(false);
+            if (siteConfig) {
+                const updated = { ...siteConfig, teamMembers: { list: managedTeamMembers } };
+                setSiteConfig(updated);
+                try {
+                    localStorage.setItem('lsd_site_config', JSON.stringify(updated));
+                } catch {}
+            }
+            toast.update(toastId, { render: "Meet The Team updated successfully!", type: "success", isLoading: false, autoClose: 3000 });
+        } catch (err) {
+            console.error("Save team members error:", err);
+            toast.update(toastId, { render: "Failed to save team: " + (err.message || "Unknown error"), type: "error", isLoading: false, autoClose: 3000 });
+        }
+    };
+
+    const handleUploadMemberPhoto = async (index, file) => {
+        if (!file) return;
+        const memberName = managedTeamMembers[index]?.name || `Member #${index + 1}`;
+        const toastId = toast.loading(`Uploading portrait for ${memberName}...`);
+        try {
+            let webpFile = await convertToWebP(file);
+            if (!webpFile || webpFile.size === 0) webpFile = file;
+            const up = await adminApi.uploadFile(webpFile);
+            const photoUrl = up.downloadUrl || up.url || URL.createObjectURL(webpFile);
+            const updatedList = [...managedTeamMembers];
+            updatedList[index] = {
+                ...updatedList[index],
+                image: { id: up.id, url: photoUrl, downloadUrl: photoUrl }
+            };
+            setManagedTeamMembers(updatedList);
+            await adminApi.updateSiteConfig({ teamMembers: { list: updatedList } }, siteConfig ? siteConfig.id : null);
+            setIsTeamMembersDirty(false);
+            if (siteConfig) {
+                const updated = { ...siteConfig, teamMembers: { list: updatedList } };
+                setSiteConfig(updated);
+                try {
+                    localStorage.setItem('lsd_site_config', JSON.stringify(updated));
+                } catch {}
+            }
+            toast.update(toastId, { render: `Portrait updated for ${memberName}!`, type: "success", isLoading: false, autoClose: 3000 });
+        } catch (err) {
+            console.error("Upload member photo error:", err);
+            toast.update(toastId, { render: "Failed to upload photo: " + (err.message || "Unknown error"), type: "error", isLoading: false, autoClose: 3000 });
+        }
+    };
+
+    const handleRemoveMemberPhoto = async (index) => {
+        const memberName = managedTeamMembers[index]?.name || `Member #${index + 1}`;
+        if (!window.confirm(`Remove portrait for ${memberName}?`)) return;
+        const updatedList = [...managedTeamMembers];
+        updatedList[index] = { ...updatedList[index], image: null };
+        setManagedTeamMembers(updatedList);
+        setIsTeamMembersDirty(true);
+    };
+
+    const handleUpdateMemberField = (index, field, value) => {
+        const updatedList = [...managedTeamMembers];
+        updatedList[index] = { ...updatedList[index], [field]: value };
+        setManagedTeamMembers(updatedList);
+        setIsTeamMembersDirty(true);
+    };
+
+    const handleMoveMember = (index, direction) => {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= managedTeamMembers.length) return;
+        const updatedList = [...managedTeamMembers];
+        const temp = updatedList[index];
+        updatedList[index] = updatedList[newIndex];
+        updatedList[newIndex] = temp;
+        setManagedTeamMembers(updatedList);
+        setIsTeamMembersDirty(true);
+    };
+
+    const handleDeleteMember = (index) => {
+        const memberName = managedTeamMembers[index]?.name || `Member #${index + 1}`;
+        if (window.confirm(`Are you sure you want to remove ${memberName} from Meet The Team?`)) {
+            const updatedList = managedTeamMembers.filter((_, i) => i !== index);
+            setManagedTeamMembers(updatedList);
+            setIsTeamMembersDirty(true);
+        }
+    };
+
+    const handleAddMember = async (e) => {
+        e.preventDefault();
+        if (!newMemberName.trim()) {
+            toast.error("Please enter a name for the team member");
+            return;
+        }
+        let photoObj = null;
+        if (newMemberPhoto) {
+            const toastId = toast.loading("Uploading portrait...");
+            try {
+                let webpFile = await convertToWebP(newMemberPhoto);
+                if (!webpFile || webpFile.size === 0) webpFile = newMemberPhoto;
+                const up = await adminApi.uploadFile(webpFile);
+                photoObj = { id: up.id, url: up.downloadUrl || up.url };
+                toast.dismiss(toastId);
+            } catch (err) {
+                toast.error("Failed to upload portrait: " + err.message);
+                return;
+            }
+        }
+        const newMember = {
+            id: 'tm_' + Date.now(),
+            name: newMemberName.trim().toUpperCase(),
+            role: newMemberRole.trim() || 'Photographer',
+            image: photoObj
+        };
+        const updatedList = [...managedTeamMembers, newMember];
+        setManagedTeamMembers(updatedList);
+        setNewMemberName('');
+        setNewMemberRole('Photographer');
+        setNewMemberPhoto(null);
+        setIsAddingTeamMember(false);
+        try {
+            await adminApi.updateSiteConfig({ teamMembers: { list: updatedList } }, siteConfig ? siteConfig.id : null);
+            setIsTeamMembersDirty(false);
+            if (siteConfig) {
+                const updated = { ...siteConfig, teamMembers: { list: updatedList } };
+                setSiteConfig(updated);
+                try {
+                    localStorage.setItem('lsd_site_config', JSON.stringify(updated));
+                } catch {}
+            }
+            toast.success("Team member added successfully!");
+        } catch (err) {
+            setIsTeamMembersDirty(true);
+            toast.success("Team member added! Click 'Save Changes' to apply.");
         }
     };
 
@@ -739,13 +920,14 @@ const AdminDashboard = () => {
                 title: newPortfolio.title,
                 date: newPortfolio.date || new Date().toISOString().split('T')[0],
                 homePage: newPortfolio.homePage,
+                aboutPage: newPortfolio.aboutPage || false,
                 heroImage: heroImageId ? { id: heroImageId } : null,
                 heroImageLowRes: heroImageLowResId ? { id: heroImageLowResId } : null,
                 images: imageIds.map(id => ({ id })),
                 imagesLowRes: imageLowResIds.map(id => ({ id }))
             });
 
-            setNewPortfolio({ title: '', date: '', homePage: false });
+            setNewPortfolio({ title: '', date: '', homePage: false, aboutPage: false });
             setPortfolioHero(null);
             setPortfolioImages([]);
             loadData();
@@ -1008,6 +1190,9 @@ const AdminDashboard = () => {
                     <TabButton tab="films" label="Wedding Films" icon={
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
                     } />
+                    <TabButton tab="team_members" label="Meet The Team" icon={
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    } />
                     <TabButton tab="messages" label="Messages" icon={
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                     } />
@@ -1051,6 +1236,7 @@ const AdminDashboard = () => {
                     >
                         <option value="portfolio">Portfolio</option>
                         <option value="films">Films</option>
+                        <option value="team_members">Meet The Team</option>
                         <option value="messages">Messages</option>
                         <option value="settings">Settings</option>
                     </select>
@@ -1085,9 +1271,15 @@ const AdminDashboard = () => {
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
                                                 <input type="date" value={newPortfolio.date} onChange={e => setNewPortfolio({...newPortfolio, date: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none transition-all" />
                                             </div>
-                                            <div className="flex items-center">
-                                                <input type="checkbox" id="homePage" checked={newPortfolio.homePage} onChange={e => setNewPortfolio({...newPortfolio, homePage: e.target.checked})} className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900" />
-                                                <label htmlFor="homePage" className="ml-2 block text-sm font-medium text-gray-700">Feature on Home Page</label>
+                                            <div className="space-y-2">
+                                                <div className="flex items-center">
+                                                    <input type="checkbox" id="homePage" checked={newPortfolio.homePage} onChange={e => setNewPortfolio({...newPortfolio, homePage: e.target.checked})} className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900" />
+                                                    <label htmlFor="homePage" className="ml-2 block text-sm font-medium text-gray-700">Feature on Home Page</label>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <input type="checkbox" id="aboutPage" checked={newPortfolio.aboutPage || false} onChange={e => setNewPortfolio({...newPortfolio, aboutPage: e.target.checked})} className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500" />
+                                                    <label htmlFor="aboutPage" className="ml-2 block text-sm font-medium text-gray-700">Feature on About Us (Stories We've Crafted)</label>
+                                                </div>
                                             </div>
                                             
                                             <div className="pt-4 border-t border-gray-100">
@@ -1218,10 +1410,32 @@ const AdminDashboard = () => {
                                                                 onChange={e => setEditPortfolioData({...editPortfolioData, date: e.target.value})} 
                                                                 className="w-full px-3 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                                                             />
-                                                            <div className="flex gap-2">
+                                                            <div className="space-y-1.5 pt-1">
+                                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        checked={editPortfolioData.homePage || false} 
+                                                                        onChange={e => setEditPortfolioData({...editPortfolioData, homePage: e.target.checked})} 
+                                                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded"
+                                                                    />
+                                                                    <span className="text-xs text-gray-700 font-medium">Home Page</span>
+                                                                </label>
+                                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        checked={editPortfolioData.aboutPage || false} 
+                                                                        onChange={e => setEditPortfolioData({...editPortfolioData, aboutPage: e.target.checked})} 
+                                                                        className="w-4 h-4 text-amber-600 border-gray-300 rounded"
+                                                                    />
+                                                                    <span className="text-xs text-gray-700 font-medium">About Us (Stories)</span>
+                                                                </label>
+                                                            </div>
+                                                            <div className="flex gap-2 pt-1">
                                                                 <button onClick={() => {
                                                                     handleUpdatePortfolio(item.id, 'title', editPortfolioData.title);
                                                                     handleUpdatePortfolio(item.id, 'date', editPortfolioData.date);
+                                                                    handleUpdatePortfolio(item.id, 'homePage', editPortfolioData.homePage);
+                                                                    handleUpdatePortfolio(item.id, 'aboutPage', editPortfolioData.aboutPage);
                                                                     setEditingPortfolio(null);
                                                                 }} className="text-xs font-medium text-white bg-indigo-600 px-3 py-1 rounded hover:bg-indigo-700">Save</button>
                                                                 <button onClick={() => setEditingPortfolio(null)} className="text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">Cancel</button>
@@ -1236,20 +1450,35 @@ const AdminDashboard = () => {
                                                         </>
                                                     )}
                                                     
-                                                    <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-3">
-                                                        <label className="flex items-center gap-2 cursor-pointer">
+                                                    <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-2">
+                                                        <label className="flex items-center justify-between cursor-pointer px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors border border-gray-100">
+                                                            <span className="text-xs text-gray-700 font-medium flex items-center gap-1.5">
+                                                                <span className={`w-2 h-2 rounded-full ${item.homePage ? 'bg-indigo-600' : 'bg-gray-300'}`}></span>
+                                                                Home Page
+                                                            </span>
                                                             <input 
                                                                 type="checkbox" 
                                                                 checked={item.homePage || false}
                                                                 onChange={(e) => handleUpdatePortfolio(item.id, 'homePage', e.target.checked)}
-                                                                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
                                                             />
-                                                            <span className="text-sm text-gray-700 font-medium">Feature on Home Page</span>
+                                                        </label>
+                                                        <label className="flex items-center justify-between cursor-pointer px-2 py-1.5 rounded-lg hover:bg-amber-50/50 transition-colors border border-gray-100">
+                                                            <span className="text-xs text-gray-700 font-medium flex items-center gap-1.5">
+                                                                <span className={`w-2 h-2 rounded-full ${item.aboutPage ? 'bg-amber-500' : 'bg-gray-300'}`}></span>
+                                                                About Us (Stories)
+                                                            </span>
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={item.aboutPage || false}
+                                                                onChange={() => handleToggleAboutPage(item.id, item.aboutPage)}
+                                                                className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500 cursor-pointer"
+                                                            />
                                                         </label>
                                                         <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-gray-100">
                                                             <button onClick={() => {
                                                                 setEditingPortfolio(item.id);
-                                                                setEditPortfolioData({ title: item.title, date: item.date });
+                                                                setEditPortfolioData({ title: item.title, date: item.date, homePage: item.homePage, aboutPage: item.aboutPage });
                                                             }} className="flex-1 justify-center text-xs sm:text-sm font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors flex items-center gap-1 py-1.5 px-2 rounded-md">
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                                                 Edit
@@ -1358,6 +1587,219 @@ const AdminDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* MEET THE TEAM TAB */}
+                    {activeTab === 'team_members' && (
+                        <div className="animate-fadeIn max-w-6xl">
+                            <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-gray-900">Meet The Team</h1>
+                                    <p className="text-gray-500 mt-2">Manage team member portraits, names, and roles displayed on the About Us page.</p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <button
+                                        onClick={() => setIsAddingTeamMember(true)}
+                                        className="px-4 py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm flex items-center gap-2"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                                        Add Member
+                                    </button>
+                                    <button
+                                        onClick={handleSaveTeamMembers}
+                                        disabled={!isTeamMembersDirty}
+                                        className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2 ${
+                                            isTeamMembersDirty
+                                                ? 'bg-green-600 text-white hover:bg-green-700 animate-pulse'
+                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Add Member Form */}
+                            {isAddingTeamMember && (
+                                <div className="mb-8 bg-white border border-gray-200 rounded-xl p-6 shadow-sm animate-fadeIn">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-bold text-gray-900">Add New Team Member</h3>
+                                        <button onClick={() => setIsAddingTeamMember(false)} className="text-gray-400 hover:text-gray-600">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        </button>
+                                    </div>
+                                    <form onSubmit={handleAddMember} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase text-gray-700 mb-1">Name</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. KARTHIK"
+                                                value={newMemberName}
+                                                onChange={e => setNewMemberName(e.target.value)}
+                                                required
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm uppercase focus:ring-2 focus:ring-gray-900 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase text-gray-700 mb-1">Role</label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Photographer, Cinematographer"
+                                                value={newMemberRole}
+                                                onChange={e => setNewMemberRole(e.target.value)}
+                                                required
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold uppercase text-gray-700 mb-1">Portrait Photo</label>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={e => setNewMemberPhoto(e.target.files?.[0] || null)}
+                                                className="w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 cursor-pointer"
+                                            />
+                                        </div>
+                                        <div className="md:col-span-3 flex justify-end gap-2 pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsAddingTeamMember(false)}
+                                                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                className="px-5 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                                            >
+                                                Add to Team
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            )}
+
+                            {/* Team Member Cards Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {managedTeamMembers.map((member, index) => {
+                                    const imgUrl = member.image?.url || member.image?.downloadUrl || (typeof member.image === 'string' ? member.image : null);
+                                    
+                                    return (
+                                        <div key={member.id || index} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow group">
+                                            {/* Member Photo Preview */}
+                                            <div className="aspect-[3/4] w-full bg-gray-900 relative overflow-hidden flex items-center justify-center">
+                                                {imgUrl ? (
+                                                    <img
+                                                        src={imgUrl}
+                                                        alt={member.name}
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    />
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center text-gray-500 p-4 text-center">
+                                                        <svg className="w-16 h-16 text-gray-600 mb-2" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                                        </svg>
+                                                        <span className="text-xs text-gray-400">No Photo Uploaded</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Overlay controls for photo */}
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-3">
+                                                    <label className="cursor-pointer bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100 transition-colors shadow">
+                                                        <span>{imgUrl ? 'Change Photo' : 'Upload Photo'}</span>
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={(e) => {
+                                                                if (e.target.files?.[0]) {
+                                                                    handleUploadMemberPhoto(index, e.target.files[0]);
+                                                                }
+                                                            }}
+                                                            className="sr-only"
+                                                        />
+                                                    </label>
+                                                    {imgUrl && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveMemberPhoto(index)}
+                                                            title="Remove Photo"
+                                                            className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Details & Inline Edit */}
+                                            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Name</label>
+                                                        <input
+                                                            type="text"
+                                                            value={member.name || ''}
+                                                            onChange={(e) => handleUpdateMemberField(index, 'name', e.target.value.toUpperCase())}
+                                                            className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm font-bold text-gray-900 uppercase focus:ring-2 focus:ring-gray-900 outline-none"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Role</label>
+                                                        <input
+                                                            type="text"
+                                                            value={member.role || ''}
+                                                            onChange={(e) => handleUpdateMemberField(index, 'role', e.target.value)}
+                                                            className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs text-gray-600 focus:ring-2 focus:ring-gray-900 outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Bottom Action Toolbar */}
+                                                <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            disabled={index === 0}
+                                                            onClick={() => handleMoveMember(index, -1)}
+                                                            title="Move Left/Up"
+                                                            className="p-1 rounded text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={index === managedTeamMembers.length - 1}
+                                                            onClick={() => handleMoveMember(index, 1)}
+                                                            title="Move Right/Down"
+                                                            className="p-1 rounded text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                                        </button>
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteMember(index)}
+                                                        className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors flex items-center gap-1 text-[11px]"
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                        Remove
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {managedTeamMembers.length === 0 && (
+                                <div className="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+                                    <svg className="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                    <p className="text-gray-500">No team members yet. Click "Add Member" to create one.</p>
+                                </div>
+                            )}
                         </div>
                     )}
 

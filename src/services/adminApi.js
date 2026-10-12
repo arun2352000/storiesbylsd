@@ -138,7 +138,20 @@ export const adminApi = {
         });
         
         if (!registerRes.ok) throw new Error('Failed to register file');
-        return await registerRes.json();
+        const fileRecord = await registerRes.json();
+
+        // Immediately fetch presigned downloadUrl so caller has ready-to-use image URL
+        try {
+            const presignedFiles = await adminApi.getFiles([fileRecord.id]);
+            if (presignedFiles && presignedFiles.length > 0) {
+                fileRecord.downloadUrl = presignedFiles[0].downloadUrl || presignedFiles[0].url;
+                fileRecord.url = presignedFiles[0].url || presignedFiles[0].downloadUrl;
+            }
+        } catch (e) {
+            console.warn("Could not presign uploaded file:", e);
+        }
+
+        return fileRecord;
     },
 
     // Portfolio Items
@@ -229,25 +242,32 @@ export const adminApi = {
 
     // Site Config
     getSiteConfig: async () => {
+        let config = null;
         try {
-            const pubRes = await fetch(`${AALY_BASE_URL}/site_config/public`);
-            if (pubRes.ok) {
-                const pubData = await pubRes.json();
-                if (pubData.items && pubData.items.length > 0) {
-                    return pubData.items[0];
-                }
+            const res = await fetchWithAuth(`${AALY_BASE_URL}/site_config`, { headers: getAuthHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                config = (data.items && data.items.length > 0) ? data.items[0] : null;
+            } else if (res.status === 401) {
+                throw new Error('Unauthorized');
             }
         } catch (e) {
-            console.warn("Public site_config hydration failed, falling back to authenticated CRUD:", e);
+            if (e.message === 'Unauthorized') throw e;
+            console.warn("Authenticated site_config fetch failed, trying public fallback:", e);
         }
 
-        const res = await fetchWithAuth(`${AALY_BASE_URL}/site_config`, { headers: getAuthHeaders() });
-        if (!res.ok) {
-            if (res.status === 401) throw new Error('Unauthorized');
-            return null; // config might not exist
+        if (!config) {
+            try {
+                const pubRes = await fetch(`${AALY_BASE_URL}/site_config/public`);
+                if (pubRes.ok) {
+                    const pubData = await pubRes.json();
+                    config = (pubData.items && pubData.items.length > 0) ? pubData.items[0] : null;
+                }
+            } catch (e) {
+                console.warn("Public site_config hydration failed:", e);
+            }
         }
-        const data = await res.json();
-        const config = (data.items && data.items.length > 0) ? data.items[0] : null;
+
         if (!config) return null;
 
         // Hydrate files if present
@@ -259,6 +279,18 @@ export const adminApi = {
         }
         if (Array.isArray(config.teamImages)) {
             config.teamImages.forEach(img => { if (img && img.id) fileIds.push(img.id); });
+        }
+        let tmList = [];
+        if (Array.isArray(config.teamMembers)) {
+            tmList = config.teamMembers;
+        } else if (config.teamMembers && Array.isArray(config.teamMembers.list)) {
+            tmList = config.teamMembers.list;
+        } else if (config.teamMembers && Array.isArray(config.teamMembers.members)) {
+            tmList = config.teamMembers.members;
+        }
+
+        if (tmList.length > 0) {
+            tmList.forEach(tm => { if (tm && tm.image && tm.image.id) fileIds.push(tm.image.id); });
         }
 
         if (fileIds.length > 0) {
@@ -286,6 +318,20 @@ export const adminApi = {
                         url: fileMap[img.id] || img.url
                     }));
                 }
+                if (tmList.length > 0) {
+                    const hydratedMembers = tmList.map(tm => ({
+                        ...tm,
+                        image: tm.image ? {
+                            ...tm.image,
+                            url: (tm.image.id && fileMap[tm.image.id]) ? fileMap[tm.image.id] : tm.image.url
+                        } : null
+                    }));
+                    if (Array.isArray(config.teamMembers)) {
+                        config.teamMembers = hydratedMembers;
+                    } else if (config.teamMembers && typeof config.teamMembers === 'object') {
+                        config.teamMembers = { ...config.teamMembers, list: hydratedMembers };
+                    }
+                }
             } catch (e) {
                 console.error("Failed to hydrate site_config files in adminApi:", e);
             }
@@ -293,21 +339,36 @@ export const adminApi = {
         return config;
     },
     updateSiteConfig: async (data, existingId = null) => {
+        // Safety guard: Aaly's teamMembers field is defined as an object in the schema.
+        // If an array is passed, wrap it in { list: ... } to prevent 400 ValidationError (Expected object, got list).
+        const payload = { ...data };
+        if (payload.teamMembers && Array.isArray(payload.teamMembers)) {
+            payload.teamMembers = { list: payload.teamMembers };
+        }
+
         if (existingId) {
             const res = await fetchWithAuth(`${AALY_BASE_URL}/site_config/${existingId}`, {
                 method: 'PATCH',
                 headers: getAuthHeaders(),
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             });
-            if (!res.ok) throw new Error('Failed to update site config');
+            if (!res.ok) {
+                const errText = await res.text().catch(() => '');
+                console.error("Update site config failed:", res.status, errText);
+                throw new Error(errText || `Failed to update site config (Status ${res.status})`);
+            }
             return await res.json();
         } else {
             const res = await fetchWithAuth(`${AALY_BASE_URL}/site_config`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify(data)
+                body: JSON.stringify(payload)
             });
-            if (!res.ok) throw new Error('Failed to create site config');
+            if (!res.ok) {
+                const errText = await res.text().catch(() => '');
+                console.error("Create site config failed:", res.status, errText);
+                throw new Error(errText || `Failed to create site config (Status ${res.status})`);
+            }
             return await res.json();
         }
     }
