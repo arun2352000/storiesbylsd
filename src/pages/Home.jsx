@@ -76,6 +76,7 @@ const Home = () => {
     // Handle immediate play when hero video source is hydrated from API
     useEffect(() => {
         if (heroVideoSrc && videoRef.current) {
+            videoRef.current.load();
             videoRef.current.muted = true;
             videoRef.current.play().catch((err) => {
                 console.log("Initial autoplay deferred:", err);
@@ -169,44 +170,47 @@ const Home = () => {
 
     return (
         <MainLayout>
-            {/* Hero Section - Loads exclusively from API with Exact Opening Frame Poster */}
-            <ScrollReveal delay={100} duration={1000}>
-                <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
-                    {/* Fallback poster: vertical on mobile, horizontal on desktop/tablets */}
-                    <div 
-                        className="absolute inset-0 bg-cover bg-center md:hidden"
-                        style={{ backgroundImage: `url('${siteConfig?.heroVideoThumb?.url || heroPosterVertical}')` }}
+            {/* Hero Section - Loads instantly on mount with High-Priority Picture & Video Poster */}
+            <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
+                {/* Instant Picture Poster: Zero olive-green delay on both mobile & desktop */}
+                <picture className="absolute inset-0 w-full h-full pointer-events-none">
+                    <source media="(min-width: 768px)" srcSet={siteConfig?.heroVideoThumb?.url || heroPosterHorizontal} />
+                    <img 
+                        src={siteConfig?.heroVideoThumb?.url || heroPosterVertical} 
+                        alt="LSD Stories Hero" 
+                        className="w-full h-full object-cover"
+                        fetchPriority="high"
+                        loading="eager"
+                        decoding="sync"
                     />
-                    <div 
-                        className="absolute inset-0 bg-cover bg-center hidden md:block"
-                        style={{ backgroundImage: `url('${siteConfig?.heroVideoThumb?.url || heroPosterHorizontal}')` }}
-                    />
+                </picture>
 
+                {/* Hero Video - Present in DOM immediately with poster, streams when API responds */}
+                <video
+                    ref={videoRef}
+                    poster={siteConfig?.heroVideoThumb?.url || heroPosterVertical}
+                    className="absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90"
+                    loop
+                    autoPlay
+                    muted
+                    preload="metadata"
+                    playsInline
+                    onCanPlay={(e) => {
+                        e.target.muted = true;
+                        e.target.play().catch(() => {});
+                    }}
+                >
                     {heroVideoSrc && (
-                        <video
-                            key={heroVideoSrc}
-                            ref={videoRef}
-                            src={heroVideoSrc}
-                            poster={siteConfig?.heroVideoThumb?.url || heroPosterVertical}
-                            className="absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90"
-                            loop
-                            autoPlay
-                            muted
-                            preload="metadata"
-                            playsInline
-                            onCanPlay={(e) => {
-                                e.target.muted = true;
-                                e.target.play().catch(() => {});
-                            }}
-                        >
+                        <>
                             <source src={heroVideoSrc} type="video/webm" />
                             <source src={heroVideoSrc} type="video/mp4" />
-                            Your browser does not support the video tag.
-                        </video>
+                        </>
                     )}
-                    <div className="absolute inset-0 bg-black/20 pointer-events-none" />
-                </section>
-            </ScrollReveal>
+                    Your browser does not support the video tag.
+                </video>
+
+                <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+            </section>
 
             {/* 2. Image Folio Section */}
             {siteConfig?.folioImages && siteConfig.folioImages.length > 0 && (
@@ -217,7 +221,7 @@ const Home = () => {
 
             {/* 3. About Us Section */}
             <ScrollReveal>
-                <AboutUsPreview teamImages={siteConfig?.teamImages || []} />
+                <AboutUsPreview teamImages={siteConfig?.teamImages || []} teamGrid={siteConfig?.teamGrid || '2x3'} />
             </ScrollReveal>
 
             {/* 4. Gallery Section */}

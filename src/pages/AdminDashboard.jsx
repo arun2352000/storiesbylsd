@@ -315,6 +315,9 @@ const AdminDashboard = () => {
     const [managedFolioImages, setManagedFolioImages] = useState([]);
     const [isFolioDirty, setIsFolioDirty] = useState(false);
     const [newTeamImages, setNewTeamImages] = useState([]);
+    const [managedTeamImages, setManagedTeamImages] = useState([]);
+    const [teamGrid, setTeamGrid] = useState('2x3');
+    const [isTeamDirty, setIsTeamDirty] = useState(false);
     const [isHomeNavOpen, setIsHomeNavOpen] = useState(true);
 
     const [loading, setLoading] = useState(true);
@@ -366,7 +369,18 @@ const AdminDashboard = () => {
             } else {
                 setManagedFolioImages([]);
             }
+            if (sc && Array.isArray(sc.teamImages)) {
+                setManagedTeamImages(sc.teamImages);
+            } else {
+                setManagedTeamImages([]);
+            }
+            if (sc && sc.teamGrid) {
+                setTeamGrid(sc.teamGrid);
+            } else {
+                setTeamGrid('2x3');
+            }
             setIsFolioDirty(false);
+            setIsTeamDirty(false);
         } catch (error) {
             console.error(error);
             if (error.message.includes('401')) {
@@ -398,6 +412,26 @@ const AdminDashboard = () => {
                             downloadUrl: urlMap[item.id] || item.downloadUrl
                         })));
                     }
+                }
+                if (Array.isArray(sc.teamImages)) {
+                    if (!isTeamDirty || forceOrder) {
+                        setManagedTeamImages(sc.teamImages);
+                    } else {
+                        const urlMap = {};
+                        sc.teamImages.forEach(img => {
+                            if (img && img.id) {
+                                urlMap[img.id] = img.url || img.downloadUrl;
+                            }
+                        });
+                        setManagedTeamImages(prev => prev.map(item => ({
+                            ...item,
+                            url: urlMap[item.id] || item.url,
+                            downloadUrl: urlMap[item.id] || item.downloadUrl
+                        })));
+                    }
+                }
+                if (sc.teamGrid && !isTeamDirty) {
+                    setTeamGrid(sc.teamGrid);
                 }
             }
         } catch (err) {
@@ -457,7 +491,49 @@ const AdminDashboard = () => {
         }
     };
 
-    
+    // Team Portraits Drag & Drop, Replace, and Delete handlers
+    const handleTeamDragStart = (e, index) => {
+        e.dataTransfer.setData('teamSourceIndex', index);
+    };
+
+    const handleTeamDrop = (e, targetIndex) => {
+        const sourceIndex = e.dataTransfer.getData('teamSourceIndex');
+        if (sourceIndex === '' || sourceIndex === targetIndex.toString()) return;
+        const src = parseInt(sourceIndex, 10);
+        setManagedTeamImages(prev => {
+            const arr = [...prev];
+            const [dragged] = arr.splice(src, 1);
+            arr.splice(targetIndex, 0, dragged);
+            return arr;
+        });
+        setIsTeamDirty(true);
+    };
+
+    const handleDeleteTeamImage = (indexToDelete) => {
+        setManagedTeamImages(prev => prev.filter((_, idx) => idx !== indexToDelete));
+        setIsTeamDirty(true);
+    };
+
+    const handleReplaceTeamImageFile = async (e, targetIndex) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const toastId = toast.loading(`Converting & uploading replacement portrait #${targetIndex + 1}...`);
+        try {
+            let webpFile = await convertToWebP(file);
+            if (!webpFile || webpFile.size === 0) webpFile = file;
+            const up = await adminApi.uploadFile(webpFile);
+            setManagedTeamImages(prev => {
+                const arr = [...prev];
+                arr[targetIndex] = { id: up.id, url: up.downloadUrl || up.url };
+                return arr;
+            });
+            setIsTeamDirty(true);
+            toast.update(toastId, { render: `Portrait #${targetIndex + 1} replaced! Click "Save Current Section" to apply.`, type: "success", isLoading: false, autoClose: 3000 });
+        } catch (err) {
+            console.error("Replace team portrait error:", err);
+            toast.update(toastId, { render: "Failed to replace image: " + (err.message || "Unknown error"), type: "error", isLoading: false, autoClose: 3000 });
+        }
+    };
 
     const handleDeletePortfolio = async (id) => {
         if (window.confirm('Are you sure you want to delete this portfolio item?')) {
@@ -796,8 +872,8 @@ const AdminDashboard = () => {
                 const combined = [...managedFolioImages, ...uploadedFiles];
                 updatedPayload.folioImages = combined.map(img => ({ id: img.id }));
             } else if (activeTab === 'home_team') {
-                if (newTeamImages.length === 0) {
-                    toast.update(toastId, { render: "Please select at least one portrait.", type: "error", isLoading: false, autoClose: 3000 });
+                if (managedTeamImages.length === 0 && newTeamImages.length === 0) {
+                    toast.update(toastId, { render: "Please have at least one portrait.", type: "error", isLoading: false, autoClose: 3000 });
                     setIsUploading(false);
                     return;
                 }
@@ -812,9 +888,12 @@ const AdminDashboard = () => {
 
                     toast.update(toastId, { render: `Uploading team portrait ${i + 1}/${newTeamImages.length}...` });
                     const up = await adminApi.uploadFile(webpFile);
-                    uploadedFiles.push({ id: up.id });
+                    uploadedFiles.push({ id: up.id, url: up.downloadUrl || up.url });
                 }
-                updatedPayload.teamImages = uploadedFiles;
+                const combined = [...managedTeamImages, ...uploadedFiles];
+                updatedPayload.teamImages = combined.map(img => ({ id: img.id }));
+                updatedPayload.teamGrid = teamGrid;
+                setIsTeamDirty(false);
             }
 
             toast.update(toastId, { render: "Saving configuration..." });
@@ -824,6 +903,7 @@ const AdminDashboard = () => {
             setNewFolioImages([]);
             setNewTeamImages([]);
             setIsFolioDirty(false);
+            setIsTeamDirty(false);
             await loadData();
             toast.update(toastId, { render: "Home Page updated successfully!", type: "success", isLoading: false, autoClose: 3000 });
         } catch (error) {
@@ -890,7 +970,7 @@ const AdminDashboard = () => {
     };
 
     if (loading) return (
-        <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+        <div className="flex h-screen w-full items-center justify-center bg-gray-50 text-gray-900">
             <div className="flex flex-col items-center gap-4">
                 <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-gray-900"></div>
                 <p className="text-gray-600 font-medium">Loading Admin Data...</p>
@@ -909,7 +989,7 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="flex min-h-screen bg-gray-50 font-sans">
+        <div className="flex min-h-screen bg-gray-50 font-sans text-gray-900">
             {/* Sidebar */}
             <aside className="w-72 bg-white border-r border-gray-200 flex flex-col shadow-sm hidden md:flex">
                 <div className="p-6 border-b border-gray-200">
@@ -1550,52 +1630,204 @@ const AdminDashboard = () => {
 
                                     {/* 3. Team Images */}
                                     {activeTab === 'home_team' && (
-                                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 animate-fadeIn">
+                                        <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 animate-fadeIn space-y-6">
                                             <div className="flex justify-between items-center mb-1">
-                                                <h3 className="text-xl font-semibold text-gray-900">Team Portraits (About Us)</h3>
-                                                {siteConfig?.teamImages && (
-                                                    <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
-                                                        {siteConfig.teamImages.length} Active in Database
+                                                <div>
+                                                    <h3 className="text-xl font-semibold text-gray-900">Team Portraits (About Us)</h3>
+                                                    <p className="text-sm text-gray-500 mt-1">Configure team layout, replace or reorder individual portraits, and add new members.</p>
+                                                </div>
+                                                {managedTeamImages.length > 0 && (
+                                                    <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md">
+                                                        {managedTeamImages.length} Active Portraits
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-gray-500 mb-5">Upload team member portraits for the 4x2 About Us grid (Max 8 recommended). Re-uploading will replace the current set.</p>
-                                            
-                                            {/* Preview of active team portraits */}
-                                            {siteConfig && Array.isArray(siteConfig.teamImages) && siteConfig.teamImages.length > 0 && (
-                                                <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                                                    <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                                                        <svg className="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path></svg>
-                                                        Currently Active Portraits ({siteConfig.teamImages.length})
-                                                    </p>
-                                                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                                                        {siteConfig.teamImages.map((img, idx) => (
-                                                            <div key={img.id || idx} className="aspect-square rounded-md overflow-hidden bg-gray-100 border border-gray-200">
-                                                                <img src={img.url || img.downloadUrl} alt="" className="w-full h-full object-cover" />
+
+                                            {/* Grid Layout Selector: 2x2, 2x3, 2x4 */}
+                                            <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <div>
+                                                        <h4 className="text-sm font-semibold text-gray-900">UI Grid Layout</h4>
+                                                        <p className="text-xs text-gray-500">Fix the arrangement of team portraits in the About Us section</p>
+                                                    </div>
+                                                    <span className="text-xs font-bold bg-gray-100 text-gray-800 px-2.5 py-1 rounded">
+                                                        Selected: {teamGrid === '2x2' ? '2 × 2 (4 Boxes)' : teamGrid === '2x3' ? '2 × 3 (6 Boxes)' : '2 × 4 (8 Boxes)'}
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                    {/* 2x2 */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setTeamGrid('2x2'); setIsTeamDirty(true); }}
+                                                        className={`p-3.5 rounded-lg border-2 text-left transition-all cursor-pointer ${
+                                                            teamGrid === '2x2' 
+                                                                ? 'border-gray-900 bg-gray-50 shadow-sm' 
+                                                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="font-bold text-sm text-gray-900">2 × 2 Grid</span>
+                                                            <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">4 Slots</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-1 w-14 h-14 mx-auto my-1">
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                        </div>
+                                                        <p className="text-[11px] text-gray-500 text-center mt-2">2 rows × 2 columns</p>
+                                                    </button>
+
+                                                    {/* 2x3 */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setTeamGrid('2x3'); setIsTeamDirty(true); }}
+                                                        className={`p-3.5 rounded-lg border-2 text-left transition-all cursor-pointer ${
+                                                            teamGrid === '2x3' 
+                                                                ? 'border-gray-900 bg-gray-50 shadow-sm' 
+                                                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="font-bold text-sm text-gray-900">2 × 3 Grid</span>
+                                                            <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">6 Slots</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-3 gap-1 w-20 h-14 mx-auto my-1">
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                        </div>
+                                                        <p className="text-[11px] text-gray-500 text-center mt-2">2 rows × 3 columns</p>
+                                                    </button>
+
+                                                    {/* 2x4 */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setTeamGrid('2x4'); setIsTeamDirty(true); }}
+                                                        className={`p-3.5 rounded-lg border-2 text-left transition-all cursor-pointer ${
+                                                            teamGrid === '2x4' 
+                                                                ? 'border-gray-900 bg-gray-50 shadow-sm' 
+                                                                : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="font-bold text-sm text-gray-900">2 × 4 Grid</span>
+                                                            <span className="text-[10px] font-bold bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">8 Slots</span>
+                                                        </div>
+                                                        <div className="grid grid-cols-4 gap-1 w-24 h-12 mx-auto my-2">
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                            <div className="bg-gray-300 rounded-sm"></div>
+                                                        </div>
+                                                        <p className="text-[11px] text-gray-500 text-center mt-2">2 rows × 4 columns</p>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Changeable Portraits List (Reorder, Replace, Delete) */}
+                                            {managedTeamImages.length > 0 ? (
+                                                <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                                                            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                                                            Active Portraits (Drag to reorder, click "Change Image" to swap, or trash to remove)
+                                                        </p>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                                        {managedTeamImages.map((img, idx) => (
+                                                            <div 
+                                                                key={img.id || idx}
+                                                                draggable
+                                                                onDragStart={(e) => handleTeamDragStart(e, idx)}
+                                                                onDragOver={(e) => e.preventDefault()}
+                                                                onDrop={(e) => handleTeamDrop(e, idx)}
+                                                                className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200 hover:border-indigo-500 cursor-grab active:cursor-grabbing transition-all shadow-sm hover:shadow"
+                                                                title="Drag to reorder"
+                                                            >
+                                                                <img 
+                                                                    src={img.url || img.downloadUrl} 
+                                                                    alt="" 
+                                                                    className="w-full h-full object-cover pointer-events-none" 
+                                                                />
+                                                                {/* Index Badge */}
+                                                                <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none">
+                                                                    #{idx + 1}
+                                                                </span>
+
+                                                                {/* Actions Overlay: Replace & Delete */}
+                                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                                                                    <div className="flex justify-end">
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                handleDeleteTeamImage(idx);
+                                                                            }}
+                                                                            className="p-1 bg-red-600 text-white rounded hover:bg-red-700 shadow cursor-pointer"
+                                                                            title="Delete this portrait"
+                                                                        >
+                                                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                                        </button>
+                                                                    </div>
+                                                                    <div>
+                                                                        <input 
+                                                                            type="file"
+                                                                            accept="image/*"
+                                                                            id={`replace-team-${idx}`}
+                                                                            onChange={(e) => handleReplaceTeamImageFile(e, idx)}
+                                                                            className="hidden"
+                                                                        />
+                                                                        <label 
+                                                                            htmlFor={`replace-team-${idx}`}
+                                                                            onClick={(e) => e.stopPropagation()}
+                                                                            className="block w-full py-1 text-center bg-white text-gray-900 text-xs font-semibold rounded hover:bg-gray-100 cursor-pointer shadow"
+                                                                        >
+                                                                            Change Image
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         ))}
                                                     </div>
                                                 </div>
+                                            ) : (
+                                                <div className="p-8 bg-white rounded-xl border border-dashed border-gray-300 text-center text-gray-400">
+                                                    No team portraits currently in database. Add portraits below.
+                                                </div>
                                             )}
 
-                                            <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-100 transition-colors bg-white">
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    multiple
-                                                    onChange={(e) => setNewTeamImages(Array.from(e.target.files))}
-                                                    className="hidden"
-                                                    id="team-upload"
-                                                />
-                                                <label htmlFor="team-upload" className="cursor-pointer flex flex-col items-center">
-                                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 text-gray-500">
-                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                                                    </div>
-                                                    <span className="text-gray-900 font-medium">Select Team Portraits</span>
-                                                </label>
-                                                {newTeamImages.length > 0 && (
-                                                    <p className="mt-3 text-sm font-medium text-green-600 font-semibold">{newTeamImages.length} portraits selected ready to save</p>
-                                                )}
+                                            {/* Add New Portraits Section */}
+                                            <div className="bg-white p-5 rounded-xl border border-gray-200">
+                                                <h4 className="text-sm font-semibold text-gray-800 mb-1">Add More Team Portraits</h4>
+                                                <p className="text-xs text-gray-500 mb-4">Selected portraits will automatically be converted to WebP and appended to the team set.</p>
+                                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        multiple
+                                                        onChange={(e) => setNewTeamImages(Array.from(e.target.files))}
+                                                        className="hidden"
+                                                        id="team-upload"
+                                                    />
+                                                    <label htmlFor="team-upload" className="cursor-pointer flex flex-col items-center">
+                                                        <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-2">
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                                                        </div>
+                                                        <span className="text-gray-900 font-medium text-sm">Select New Portraits to Add</span>
+                                                        <span className="text-xs text-gray-400 mt-1">Converts to WebP before upload</span>
+                                                    </label>
+                                                    {newTeamImages.length > 0 && (
+                                                        <p className="mt-3 text-sm font-medium text-green-600 font-semibold">{newTeamImages.length} new portrait(s) ready to upload & add</p>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -1606,13 +1838,13 @@ const AdminDashboard = () => {
                                             disabled={isUploading || (
                                                 activeTab === 'home_video' ? (!newHeroVideo && !newHeroVideoThumb) :
                                                 activeTab === 'home_folio' ? newFolioImages.length === 0 :
-                                                activeTab === 'home_team' ? newTeamImages.length === 0 : true
+                                                activeTab === 'home_team' ? (!isTeamDirty && newTeamImages.length === 0) : true
                                             )} 
                                             className={`py-3 px-8 rounded-lg shadow-sm font-bold text-white transition-colors ${(
                                                 isUploading || (
                                                     activeTab === 'home_video' ? (!newHeroVideo && !newHeroVideoThumb) :
                                                     activeTab === 'home_folio' ? newFolioImages.length === 0 :
-                                                    activeTab === 'home_team' ? newTeamImages.length === 0 : true
+                                                    activeTab === 'home_team' ? (!isTeamDirty && newTeamImages.length === 0) : true
                                                 )
                                             ) ? 'bg-gray-400 cursor-not-allowed' : 'bg-gray-900 hover:bg-gray-800'}`}
                                         >

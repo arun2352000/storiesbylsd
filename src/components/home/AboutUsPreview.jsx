@@ -1,13 +1,30 @@
 import React from 'react';
 
-const AboutUsPreview = ({ teamImages = [] }) => {
-    // We expect up to 8 images for a 4x2 grid (4 columns, 2 rows)
+const AboutUsPreview = ({ teamImages = [], teamGrid = '2x3' }) => {
+    // Determine slot count and grid layout based on teamGrid setting
+    let targetCount = 6;
+    let gridColsClass = 'grid-cols-2 sm:grid-cols-3';
+    let containerWidthClass = 'w-full md:w-[55%] lg:w-[50%]';
+
+    if (teamGrid === '2x2') {
+        targetCount = 4;
+        gridColsClass = 'grid-cols-2';
+        containerWidthClass = 'w-full md:w-[45%] lg:w-[40%]';
+    } else if (teamGrid === '2x4') {
+        targetCount = 8;
+        gridColsClass = 'grid-cols-2 sm:grid-cols-4';
+        containerWidthClass = 'w-full md:w-[60%] lg:w-[55%]';
+    } else { // '2x3'
+        targetCount = 6;
+        gridColsClass = 'grid-cols-2 sm:grid-cols-3';
+        containerWidthClass = 'w-full md:w-[55%] lg:w-[50%]';
+    }
+
     const displayImages = [...teamImages];
-    while(displayImages.length < 8) {
+    while (displayImages.length < targetCount) {
         displayImages.push(null);
     }
-    // Ensure we only show exactly 8 boxes to maintain the 2-row layout
-    const finalImages = displayImages.slice(0, 8);
+    const finalImages = displayImages.slice(0, targetCount);
 
     const scrollToContact = () => {
         const contactSection = document.getElementById('contact-section');
@@ -20,15 +37,15 @@ const AboutUsPreview = ({ teamImages = [] }) => {
         <section className="bg-[#424530] text-white py-16 md:py-24 overflow-hidden relative">
             <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center gap-12 md:gap-16 lg:gap-20">
                 
-                {/* Left Side: Team Grid (4 columns x 2 rows = 8 boxes) */}
-                <div className="w-full md:w-[60%] lg:w-[55%]">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-0 border-t border-l border-white/10">
+                {/* Left Side: Team Grid */}
+                <div className={containerWidthClass}>
+                    <div className={`grid ${gridColsClass} gap-0 border-t border-l border-white/10`}>
                         {finalImages.map((img, index) => (
                             <div key={index} className="aspect-square border-r border-b border-white/10 overflow-hidden bg-[#424530]">
                                 {img && (
                                     <img 
                                         src={img.url || img.downloadUrl} 
-                                        className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" 
+                                        className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
                                         alt={`Team ${index + 1}`}
                                         loading="lazy"
                                     />
