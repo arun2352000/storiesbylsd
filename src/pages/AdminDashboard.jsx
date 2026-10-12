@@ -346,6 +346,8 @@ const AdminDashboard = () => {
     const [newMemberName, setNewMemberName] = useState('');
     const [newMemberRole, setNewMemberRole] = useState('Photographer');
     const [newMemberPhoto, setNewMemberPhoto] = useState(null);
+    const [draggedMemberIndex, setDraggedMemberIndex] = useState(null);
+    const [dragOverMemberIndex, setDragOverMemberIndex] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
@@ -682,6 +684,42 @@ const AdminDashboard = () => {
         updatedList[index] = updatedList[newIndex];
         updatedList[newIndex] = temp;
         setManagedTeamMembers(updatedList);
+        setIsTeamMembersDirty(true);
+    };
+
+    const handleTeamMemberDragStart = (e, index) => {
+        e.dataTransfer.setData('teamMemberSourceIndex', index.toString());
+        e.dataTransfer.effectAllowed = 'move';
+        setDraggedMemberIndex(index);
+    };
+
+    const handleTeamMemberDragOver = (e, index) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (dragOverMemberIndex !== index) {
+            setDragOverMemberIndex(index);
+        }
+    };
+
+    const handleTeamMemberDragEnd = () => {
+        setDraggedMemberIndex(null);
+        setDragOverMemberIndex(null);
+    };
+
+    const handleTeamMemberDrop = (e, targetIndex) => {
+        e.preventDefault();
+        const sourceIndex = e.dataTransfer.getData('teamMemberSourceIndex');
+        setDraggedMemberIndex(null);
+        setDragOverMemberIndex(null);
+        if (sourceIndex === '' || sourceIndex === targetIndex.toString()) return;
+        const src = parseInt(sourceIndex, 10);
+        if (isNaN(src) || src < 0 || src >= managedTeamMembers.length) return;
+        setManagedTeamMembers(prev => {
+            const arr = [...prev];
+            const [dragged] = arr.splice(src, 1);
+            arr.splice(targetIndex, 0, dragged);
+            return arr;
+        });
         setIsTeamMembersDirty(true);
     };
 
@@ -1596,7 +1634,7 @@ const AdminDashboard = () => {
                             <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div>
                                     <h1 className="text-3xl font-bold text-gray-900">Meet The Team</h1>
-                                    <p className="text-gray-500 mt-2">Manage team member portraits, names, and roles displayed on the About Us page.</p>
+                                    <p className="text-gray-500 mt-2">Manage team member portraits, names, and roles. Drag &amp; drop cards to reorder them on the About Us page.</p>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3">
                                     <button
@@ -1685,19 +1723,43 @@ const AdminDashboard = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                 {managedTeamMembers.map((member, index) => {
                                     const imgUrl = member.image?.url || member.image?.downloadUrl || (typeof member.image === 'string' ? member.image : null);
+                                    const isDragging = draggedMemberIndex === index;
+                                    const isDragOver = dragOverMemberIndex === index;
                                     
                                     return (
-                                        <div key={member.id || index} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col hover:shadow-md transition-shadow group">
+                                        <div 
+                                            key={member.id || index}
+                                            draggable={true}
+                                            onDragStart={(e) => handleTeamMemberDragStart(e, index)}
+                                            onDragOver={(e) => handleTeamMemberDragOver(e, index)}
+                                            onDragEnd={handleTeamMemberDragEnd}
+                                            onDrop={(e) => handleTeamMemberDrop(e, index)}
+                                            className={`bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col transition-all cursor-grab active:cursor-grabbing group relative select-none ${
+                                                isDragging 
+                                                    ? 'opacity-40 scale-95 border-dashed border-2 border-indigo-500 shadow-inner' 
+                                                    : isDragOver 
+                                                    ? 'border-indigo-500 ring-2 ring-indigo-400 scale-[1.02] shadow-lg' 
+                                                    : 'border-gray-200 hover:shadow-md hover:border-gray-300'
+                                            }`}
+                                        >
+                                            {/* Order & Drag Handle Badge */}
+                                            <div className="absolute top-2 left-2 z-10 bg-black/70 backdrop-blur-sm text-white px-2 py-0.5 rounded-md text-[10px] font-semibold flex items-center gap-1 shadow pointer-events-none">
+                                                <svg className="w-3 h-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 8h16M4 16h16" />
+                                                </svg>
+                                                <span>#{index + 1}</span>
+                                            </div>
+
                                             {/* Member Photo Preview */}
                                             <div className="aspect-[3/4] w-full bg-gray-900 relative overflow-hidden flex items-center justify-center">
                                                 {imgUrl ? (
                                                     <img
                                                         src={imgUrl}
                                                         alt={member.name}
-                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 pointer-events-none"
                                                     />
                                                 ) : (
-                                                    <div className="flex flex-col items-center justify-center text-gray-500 p-4 text-center">
+                                                    <div className="flex flex-col items-center justify-center text-gray-500 p-4 text-center pointer-events-none">
                                                         <svg className="w-16 h-16 text-gray-600 mb-2" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                                         </svg>
@@ -1706,7 +1768,10 @@ const AdminDashboard = () => {
                                                 )}
 
                                                 {/* Overlay controls for photo */}
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-3">
+                                                <div 
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-3"
+                                                >
                                                     <label className="cursor-pointer bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100 transition-colors shadow">
                                                         <span>{imgUrl ? 'Change Photo' : 'Upload Photo'}</span>
                                                         <input
@@ -1723,7 +1788,10 @@ const AdminDashboard = () => {
                                                     {imgUrl && (
                                                         <button
                                                             type="button"
-                                                            onClick={() => handleRemoveMemberPhoto(index)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRemoveMemberPhoto(index);
+                                                            }}
                                                             title="Remove Photo"
                                                             className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow"
                                                         >
@@ -1734,13 +1802,18 @@ const AdminDashboard = () => {
                                             </div>
 
                                             {/* Details & Inline Edit */}
-                                            <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                                            <div 
+                                                onMouseDown={(e) => e.stopPropagation()}
+                                                className="p-4 flex-1 flex flex-col justify-between space-y-3 cursor-default"
+                                            >
                                                 <div className="space-y-2">
                                                     <div>
                                                         <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">Name</label>
                                                         <input
                                                             type="text"
                                                             value={member.name || ''}
+                                                            draggable={false}
+                                                            onDragStart={(e) => e.stopPropagation()}
                                                             onChange={(e) => handleUpdateMemberField(index, 'name', e.target.value.toUpperCase())}
                                                             className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-sm font-bold text-gray-900 uppercase focus:ring-2 focus:ring-gray-900 outline-none"
                                                         />
@@ -1750,6 +1823,8 @@ const AdminDashboard = () => {
                                                         <input
                                                             type="text"
                                                             value={member.role || ''}
+                                                            draggable={false}
+                                                            onDragStart={(e) => e.stopPropagation()}
                                                             onChange={(e) => handleUpdateMemberField(index, 'role', e.target.value)}
                                                             className="w-full px-2.5 py-1.5 border border-gray-200 rounded-md text-xs text-gray-600 focus:ring-2 focus:ring-gray-900 outline-none"
                                                         />
@@ -1762,7 +1837,10 @@ const AdminDashboard = () => {
                                                         <button
                                                             type="button"
                                                             disabled={index === 0}
-                                                            onClick={() => handleMoveMember(index, -1)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleMoveMember(index, -1);
+                                                            }}
                                                             title="Move Left/Up"
                                                             className="p-1 rounded text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
                                                         >
@@ -1771,7 +1849,10 @@ const AdminDashboard = () => {
                                                         <button
                                                             type="button"
                                                             disabled={index === managedTeamMembers.length - 1}
-                                                            onClick={() => handleMoveMember(index, 1)}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleMoveMember(index, 1);
+                                                            }}
                                                             title="Move Right/Down"
                                                             className="p-1 rounded text-gray-400 hover:text-gray-900 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
                                                         >
@@ -1781,7 +1862,10 @@ const AdminDashboard = () => {
 
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleDeleteMember(index)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteMember(index);
+                                                        }}
                                                         className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors flex items-center gap-1 text-[11px]"
                                                     >
                                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
