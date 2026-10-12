@@ -17,30 +17,60 @@ const DEFAULT_TEAM_MEMBERS = [
     { id: 'tm_8', name: 'SHRAVANN', role: 'Photographer', image: null },
 ];
 
-const DEFAULT_STORIES = [
-    {
-        id: 'story_1',
-        title: 'Jayanthi & Karthik',
-        image: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-        id: 'story_2',
-        title: 'Kavitha & Sathish',
-        image: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?q=80&w=800&auto=format&fit=crop',
-    },
-    {
-        id: 'story_3',
-        title: 'Vijay & Rohini',
-        image: 'https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=800&auto=format&fit=crop',
-    },
-];
 
 const extractTeamMembers = (sc, defaultList = DEFAULT_TEAM_MEMBERS) => {
     if (!sc || !sc.teamMembers) return defaultList;
-    if (Array.isArray(sc.teamMembers) && sc.teamMembers.length > 0) return sc.teamMembers;
-    if (sc.teamMembers && Array.isArray(sc.teamMembers.list) && sc.teamMembers.list.length > 0) return sc.teamMembers.list;
-    if (sc.teamMembers && Array.isArray(sc.teamMembers.members) && sc.teamMembers.members.length > 0) return sc.teamMembers.members;
-    return defaultList;
+    let list = defaultList;
+    if (Array.isArray(sc.teamMembers) && sc.teamMembers.length > 0) list = sc.teamMembers;
+    else if (sc.teamMembers && Array.isArray(sc.teamMembers.list) && sc.teamMembers.list.length > 0) list = sc.teamMembers.list;
+    else if (sc.teamMembers && Array.isArray(sc.teamMembers.members) && sc.teamMembers.members.length > 0) list = sc.teamMembers.members;
+
+    return list.map(m => {
+        if (!m) return m;
+        if (typeof m.image === 'string' && m.image.startsWith('blob:')) {
+            return { ...m, image: null };
+        }
+        if (m.image && typeof m.image === 'object') {
+            const url = m.image.url && !m.image.url.startsWith('blob:') ? m.image.url : null;
+            const downloadUrl = m.image.downloadUrl && !m.image.downloadUrl.startsWith('blob:') ? m.image.downloadUrl : null;
+            return { ...m, image: { ...m.image, url, downloadUrl } };
+        }
+        return m;
+    });
+};
+
+const TeamMemberCard = ({ member }) => {
+    const [imgFailed, setImgFailed] = useState(false);
+    const rawUrl = member?.image?.url || member?.image?.downloadUrl || (typeof member?.image === 'string' ? member.image : null);
+    const photoUrl = (rawUrl && !rawUrl.startsWith('blob:') && !imgFailed) ? rawUrl : null;
+
+    return (
+        <div className="text-center group">
+            <div className="bg-gray-800 rounded-lg aspect-[3/4] mb-4 overflow-hidden relative shadow-md">
+                {photoUrl ? (
+                    <img
+                        src={photoUrl}
+                        alt={member?.name || 'Team Member'}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                        onError={() => setImgFailed(true)}
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-600 bg-gray-900">
+                        <svg className="w-16 h-16 opacity-40" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                fillRule="evenodd"
+                                d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                    </div>
+                )}
+            </div>
+            <h3 className="text-sm md:text-base font-light tracking-wide uppercase text-[#FFEFCD]">{member?.name}</h3>
+            <p className="text-xs md:text-sm text-gray-400 mt-0.5">{member?.role}</p>
+        </div>
+    );
 };
 
 const AboutUs = () => {
@@ -56,7 +86,7 @@ const AboutUs = () => {
         return DEFAULT_TEAM_MEMBERS;
     });
 
-    const [stories, setStories] = useState(DEFAULT_STORIES);
+    const [stories, setStories] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -116,37 +146,6 @@ const AboutUs = () => {
             description: "Whether it's the shimmer of an accessory or a tear-filled glance, nothing escapes our lens.",
         },
     ];
-
-    const renderTeamMemberCard = (member, index) => {
-        const photoUrl = member.image?.url || member.image?.downloadUrl || (typeof member.image === 'string' ? member.image : null);
-
-        return (
-            <div key={member.id || index} className="text-center group">
-                <div className="bg-gray-800 rounded-lg aspect-[3/4] mb-4 overflow-hidden relative shadow-md">
-                    {photoUrl ? (
-                        <img
-                            src={photoUrl}
-                            alt={member.name}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            loading="lazy"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-600 bg-gray-900">
-                            <svg className="w-16 h-16 opacity-40" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    fillRule="evenodd"
-                                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                                    clipRule="evenodd"
-                                />
-                            </svg>
-                        </div>
-                    )}
-                </div>
-                <h3 className="text-sm md:text-base font-light tracking-wide uppercase text-[#FFEFCD]">{member.name}</h3>
-                <p className="text-xs md:text-sm text-gray-400 mt-0.5">{member.role}</p>
-            </div>
-        );
-    };
 
     return (
         <MainLayout>
@@ -218,12 +217,16 @@ const AboutUs = () => {
                     
                     {/* First 6 members (2 rows of 3 on desktop, 3 rows of 2 on mobile) */}
                     <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto mb-6 sm:mb-8">
-                        {teamMembers.slice(0, 3).map((member, index) => renderTeamMemberCard(member, index))}
+                        {teamMembers.slice(0, 3).map((member, index) => (
+                            <TeamMemberCard key={member.id || index} member={member} />
+                        ))}
                     </div>
                     
                     {teamMembers.length > 3 && (
                         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto mb-6 sm:mb-8">
-                            {teamMembers.slice(3, 6).map((member, index) => renderTeamMemberCard(member, index + 3))}
+                            {teamMembers.slice(3, 6).map((member, index) => (
+                                <TeamMemberCard key={member.id || (index + 3)} member={member} />
+                            ))}
                         </div>
                     )}
 
@@ -236,57 +239,69 @@ const AboutUs = () => {
                                 ? 'max-w-md grid-cols-2' 
                                 : 'max-w-4xl grid-cols-2 sm:grid-cols-2 md:grid-cols-3'
                         }`}>
-                            {teamMembers.slice(6).map((member, index) => renderTeamMemberCard(member, index + 6))}
+                            {teamMembers.slice(6).map((member, index) => (
+                                <TeamMemberCard key={member.id || (index + 6)} member={member} />
+                            ))}
                         </div>
                     )}
                 </div>
             </section>
 
             {/* Stories We've Crafted Section */}
-            <section className="bg-brand-black text-white py-12 sm:py-16 px-4 md:px-8">
-                <div className="max-w-6xl mx-auto">
-                    <h2 className="text-xl sm:text-2xl md:text-4xl font-light mb-8 sm:mb-12 tracking-wide text-center italic text-[#FFEFCD]">
-                        Stories We've Crafted
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-                        {stories.map((story, index) => {
-                            const storyImage = story.heroImage?.url || story.heroImage?.downloadUrl || (typeof story.heroImage === 'string' ? story.heroImage : null) || story.image;
-                            const storyTitle = story.title || story.couple;
-                            const storyId = story.id || story._id;
+            {stories.length > 0 && (
+                <section className="bg-brand-black text-white py-12 sm:py-16 px-4 md:px-8">
+                    <div className="max-w-6xl mx-auto">
+                        <h2 className="text-xl sm:text-2xl md:text-4xl font-light mb-8 sm:mb-12 tracking-wide text-center italic text-[#FFEFCD]">
+                            Stories We've Crafted
+                        </h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+                            {stories.map((story, index) => {
+                                const storyImage = story.heroImage?.url || story.heroImage?.downloadUrl || (typeof story.heroImage === 'string' ? story.heroImage : null);
+                                const storyTitle = story.title || story.couple || 'Story';
+                                const storyId = story.id || story._id;
 
-                            return (
-                                <div 
-                                    key={storyId || index} 
-                                    onClick={() => {
-                                        if (storyId && !storyId.startsWith('story_')) {
-                                            navigate(`/project/${storyId}`);
-                                        }
-                                    }}
-                                    className={`group ${storyId && !storyId.startsWith('story_') ? 'cursor-pointer' : ''}`}
-                                >
-                                    <div className="rounded-lg overflow-hidden mb-4 aspect-[4/5] bg-gray-900 shadow-md">
-                                        <img
-                                            src={storyImage}
-                                            alt={storyTitle}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                            loading="lazy"
-                                        />
+                                return (
+                                    <div 
+                                        key={storyId || index} 
+                                        onClick={() => {
+                                            if (storyId) {
+                                                navigate(`/project/${storyId}`);
+                                            }
+                                        }}
+                                        className="group cursor-pointer"
+                                    >
+                                        <div className="rounded-lg overflow-hidden mb-4 aspect-[4/5] bg-gray-900 shadow-md">
+                                            {storyImage ? (
+                                                <img
+                                                    src={storyImage}
+                                                    alt={storyTitle}
+                                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-gray-600 bg-gray-900">
+                                                    <svg className="w-12 h-12 opacity-30" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <p className="text-center text-sm font-light text-[#FFEFCD] group-hover:text-white transition-colors">{storyTitle}</p>
                                     </div>
-                                    <p className="text-center text-sm font-light text-[#FFEFCD] group-hover:text-white transition-colors">{storyTitle}</p>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
+                        <div className="text-center">
+                            <Link
+                                to="/photography"
+                                className="inline-block bg-brand-cream text-brand-buttonText px-8 py-3 text-sm font-light tracking-widest hover:bg-brand-cream/90 transition-colors"
+                            >
+                                VIEW PORTFOLIO
+                            </Link>
+                        </div>
                     </div>
-                    <div className="text-center">
-                        <Link
-                            to="/photography"
-                            className="inline-block bg-brand-cream text-brand-buttonText px-8 py-3 text-sm font-light tracking-widest hover:bg-brand-cream/90 transition-colors"
-                        >
-                            VIEW PORTFOLIO
-                        </Link>
-                    </div>
-                </div>
-            </section>
+                </section>
+            )}
 
             {/* CTA Section */}
             <section className="bg-brand-dark text-white py-12 sm:py-16 md:py-20 px-4 md:px-8">
