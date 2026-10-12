@@ -364,6 +364,11 @@ const AdminDashboard = () => {
             setFilms(f);
             setMessages(m);
             setSiteConfig(sc);
+            if (sc) {
+                try {
+                    localStorage.setItem('lsd_site_config', JSON.stringify(sc));
+                } catch {}
+            }
             if (sc && Array.isArray(sc.folioImages)) {
                 setManagedFolioImages(sc.folioImages);
             } else {

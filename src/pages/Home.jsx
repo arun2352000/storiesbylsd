@@ -20,25 +20,51 @@ const Home = () => {
     const videoRef = useRef(null);
     const [isPlaying, setIsPlaying] = useState(true);
     const [isMuted, setIsMuted] = useState(true);
+    const [isVideoActive, setIsVideoActive] = useState(false);
     const { isMenuOpen } = useLayout();
     const [portfolioItems, setPortfolioItems] = useState([]);
-    const [heroVideoSrc, setHeroVideoSrc] = useState(null);
-    const [siteConfig, setSiteConfig] = useState(null);
+    const [siteConfig, setSiteConfig] = useState(() => {
+        try {
+            const cached = localStorage.getItem('lsd_site_config');
+            return cached ? JSON.parse(cached) : null;
+        } catch {
+            return null;
+        }
+    });
+    const [heroVideoSrc, setHeroVideoSrc] = useState(() => {
+        try {
+            const cached = localStorage.getItem('lsd_site_config');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed && parsed.heroVideo && (parsed.heroVideo.url || typeof parsed.heroVideo === 'string')) {
+                    return parsed.heroVideo.url || parsed.heroVideo;
+                }
+            }
+        } catch {}
+        return null;
+    });
     const [loading, setLoading] = useState(true);
+
+    const heroThumbUrl = siteConfig?.heroVideoThumb?.url || (typeof siteConfig?.heroVideoThumb === 'string' ? siteConfig?.heroVideoThumb : null);
 
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const [data, siteConfig] = await Promise.all([
+                const [data, fetchedSiteConfig] = await Promise.all([
                     api.getAllProjects(),
                     api.getSiteConfig()
                 ]);
                 const featuredData = data.filter(item => item.homePage === true);
                 setPortfolioItems(featuredData);
-                setSiteConfig(siteConfig);
+                if (fetchedSiteConfig) {
+                    setSiteConfig(fetchedSiteConfig);
+                    try {
+                        localStorage.setItem('lsd_site_config', JSON.stringify(fetchedSiteConfig));
+                    } catch {}
 
-                if (siteConfig && siteConfig.heroVideo && (siteConfig.heroVideo.url || typeof siteConfig.heroVideo === 'string')) {
-                    setHeroVideoSrc(siteConfig.heroVideo.url || siteConfig.heroVideo);
+                    if (fetchedSiteConfig.heroVideo && (fetchedSiteConfig.heroVideo.url || typeof fetchedSiteConfig.heroVideo === 'string')) {
+                        setHeroVideoSrc(fetchedSiteConfig.heroVideo.url || fetchedSiteConfig.heroVideo);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch data:", error);
@@ -170,31 +196,46 @@ const Home = () => {
 
     return (
         <MainLayout>
-            {/* Hero Section - Loads instantly on mount with High-Priority Picture & Video Poster */}
+            {/* Hero Section - Loads instantly on mount with High-Priority Thumbnail/Poster */}
             <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
-                {/* Instant Picture Poster: Zero olive-green delay on both mobile & desktop */}
-                <picture className="absolute inset-0 w-full h-full pointer-events-none">
-                    <source media="(min-width: 768px)" srcSet={siteConfig?.heroVideoThumb?.url || heroPosterHorizontal} />
-                    <img 
-                        src={siteConfig?.heroVideoThumb?.url || heroPosterVertical} 
-                        alt="LSD Stories Hero" 
-                        className="w-full h-full object-cover"
-                        fetchPriority="high"
-                        loading="eager"
-                        decoding="sync"
-                    />
-                </picture>
+                {/* Hero Thumbnail / Poster: When hero thumbnail is provided in CMS, take it from there */}
+                <div className="absolute inset-0 w-full h-full pointer-events-none">
+                    {heroThumbUrl ? (
+                        <img 
+                            key={heroThumbUrl}
+                            src={heroThumbUrl} 
+                            alt="LSD Stories Hero" 
+                            className="w-full h-full object-cover"
+                            fetchPriority="high"
+                            loading="eager"
+                            decoding="sync"
+                        />
+                    ) : (
+                        <picture className="w-full h-full">
+                            <source media="(min-width: 768px)" srcSet={heroPosterHorizontal} />
+                            <img 
+                                src={heroPosterVertical} 
+                                alt="LSD Stories Hero" 
+                                className="w-full h-full object-cover"
+                                fetchPriority="high"
+                                loading="eager"
+                                decoding="sync"
+                            />
+                        </picture>
+                    )}
+                </div>
 
-                {/* Hero Video - Present in DOM immediately with poster, streams when API responds */}
+                {/* Hero Video - Present in DOM immediately, streams when API responds and fades in when playing */}
                 <video
                     ref={videoRef}
-                    poster={siteConfig?.heroVideoThumb?.url || heroPosterVertical}
-                    className="absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90"
+                    poster={heroThumbUrl ? undefined : heroPosterVertical}
+                    className={`absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90 transition-opacity duration-700 ${isVideoActive ? 'opacity-100' : 'opacity-0'}`}
                     loop
                     autoPlay
                     muted
                     preload="metadata"
                     playsInline
+                    onPlaying={() => setIsVideoActive(true)}
                     onCanPlay={(e) => {
                         e.target.muted = true;
                         e.target.play().catch(() => {});
