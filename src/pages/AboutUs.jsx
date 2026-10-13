@@ -73,6 +73,30 @@ const TeamMemberCard = ({ member }) => {
     );
 };
 
+const getTeamCardGridClass = (index, total) => {
+    const remainder = total % 3;
+    let desktopClasses = 'md:col-span-4';
+
+    if (remainder === 1 && index === total - 1) {
+        // 1 remaining member: centered in the middle column
+        desktopClasses = 'md:col-start-5 md:col-span-4';
+    } else if (remainder === 2 && index === total - 2) {
+        // First of 2 remaining members: centered between column 1 and column 2
+        desktopClasses = 'md:col-start-3 md:col-span-4';
+    } else if (remainder === 2 && index === total - 1) {
+        // Second of 2 remaining members: centered between column 2 and column 3
+        desktopClasses = 'md:col-span-4';
+    }
+
+    // On mobile (2 columns): if total is odd and this is the last card, center it across both columns
+    const isMobileCentered = (total % 2 !== 0) && (index === total - 1);
+    const mobileClasses = isMobileCentered 
+        ? 'col-span-2 max-w-[220px] sm:max-w-xs mx-auto w-full' 
+        : 'col-span-1 w-full';
+
+    return `${mobileClasses} ${desktopClasses}`;
+};
+
 const AboutUs = () => {
     const navigate = useNavigate();
     const [teamMembers, setTeamMembers] = useState(() => {
@@ -215,35 +239,13 @@ const AboutUs = () => {
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-light mb-8 sm:mb-12 tracking-wide text-center text-[#FFEFCD]">MEET THE TEAM</h2>
                     
-                    {/* First 6 members (2 rows of 3 on desktop, 3 rows of 2 on mobile) */}
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto mb-6 sm:mb-8">
-                        {teamMembers.slice(0, 3).map((member, index) => (
-                            <TeamMemberCard key={member.id || index} member={member} />
+                    <div className="grid grid-cols-2 md:grid-cols-12 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto">
+                        {teamMembers.map((member, index) => (
+                            <div key={member.id || index} className={getTeamCardGridClass(index, teamMembers.length)}>
+                                <TeamMemberCard member={member} />
+                            </div>
                         ))}
                     </div>
-                    
-                    {teamMembers.length > 3 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 md:gap-12 max-w-4xl mx-auto mb-6 sm:mb-8">
-                            {teamMembers.slice(3, 6).map((member, index) => (
-                                <TeamMemberCard key={member.id || (index + 3)} member={member} />
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Centered remaining members (e.g. 7 & 8) */}
-                    {teamMembers.length > 6 && (
-                        <div className={`grid gap-4 sm:gap-8 md:gap-12 mx-auto ${
-                            teamMembers.length - 6 === 1 
-                                ? 'max-w-xs grid-cols-1' 
-                                : teamMembers.length - 6 === 2 
-                                ? 'max-w-md grid-cols-2' 
-                                : 'max-w-4xl grid-cols-2 sm:grid-cols-2 md:grid-cols-3'
-                        }`}>
-                            {teamMembers.slice(6).map((member, index) => (
-                                <TeamMemberCard key={member.id || (index + 6)} member={member} />
-                            ))}
-                        </div>
-                    )}
                 </div>
             </section>
 
