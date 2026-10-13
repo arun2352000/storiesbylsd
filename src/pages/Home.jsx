@@ -197,7 +197,7 @@ const Home = () => {
                 {/* Hero Video - Present in DOM immediately, streams when API responds and fades in when playing */}
                 <video
                     ref={videoRef}
-                    className={`absolute top-1/2 left-1/2 w-[100vh] h-[100vw] min-w-full min-h-full max-w-none -translate-x-1/2 -translate-y-1/2 -rotate-90 object-cover transition-opacity duration-700 ${isVideoActive ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:min-w-full md:min-h-full md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90 transition-opacity duration-700 ${isVideoActive ? 'opacity-100' : 'opacity-0'}`}
                     loop
                     autoPlay
                     muted
