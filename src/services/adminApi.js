@@ -168,6 +168,19 @@ export const adminApi = {
         if (!res.ok) throw new Error('Failed to fetch files');
         return (await res.json()).items || [];
     },
+    deleteFile: async (id) => {
+        if (!id) return;
+        try {
+            const res = await fetchWithAuth(`${AALY_BASE_URL}/files/${id}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            return res.ok;
+        } catch (e) {
+            console.warn(`Could not delete old file ${id}:`, e);
+            return false;
+        }
+    },
     getPortfolioItem: async (id) => {
         const res = await fetchWithAuth(`${AALY_BASE_URL}/portfolio_items/${id}`, { headers: getAuthHeaders() });
         if (!res.ok) throw new Error('Failed to fetch portfolio item');

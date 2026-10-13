@@ -557,6 +557,7 @@ const AdminDashboard = () => {
     const handleReplaceTeamImageFile = async (e, targetIndex) => {
         const file = e.target.files?.[0];
         if (!file) return;
+        const oldFileId = managedTeamImages[targetIndex]?.id;
         const toastId = toast.loading(`Converting & uploading replacement portrait #${targetIndex + 1}...`);
         try {
             let webpFile = await convertToWebP(file);
@@ -568,6 +569,13 @@ const AdminDashboard = () => {
                 return arr;
             });
             setIsTeamDirty(true);
+            if (oldFileId) {
+                try {
+                    await adminApi.deleteFile(oldFileId);
+                } catch (err) {
+                    console.warn("Could not delete old portrait file:", err);
+                }
+            }
             toast.update(toastId, { render: `Portrait #${targetIndex + 1} replaced! Click "Save Current Section" to apply.`, type: "success", isLoading: false, autoClose: 3000 });
         } catch (err) {
             console.error("Replace team portrait error:", err);
@@ -632,6 +640,7 @@ const AdminDashboard = () => {
     const handleUploadMemberPhoto = async (index, file) => {
         if (!file) return;
         const memberName = managedTeamMembers[index]?.name || `Member #${index + 1}`;
+        const oldFileId = managedTeamMembers[index]?.image?.id;
         const toastId = toast.loading(`Uploading portrait for ${memberName}...`);
         try {
             let webpFile = await convertToWebP(file);
@@ -653,6 +662,13 @@ const AdminDashboard = () => {
                     localStorage.setItem('lsd_site_config', JSON.stringify(updated));
                 } catch {}
             }
+            if (oldFileId) {
+                try {
+                    await adminApi.deleteFile(oldFileId);
+                } catch (err) {
+                    console.warn("Could not delete old member photo:", err);
+                }
+            }
             toast.update(toastId, { render: `Portrait updated for ${memberName}!`, type: "success", isLoading: false, autoClose: 3000 });
         } catch (err) {
             console.error("Upload member photo error:", err);
@@ -663,10 +679,18 @@ const AdminDashboard = () => {
     const handleRemoveMemberPhoto = async (index) => {
         const memberName = managedTeamMembers[index]?.name || `Member #${index + 1}`;
         if (!window.confirm(`Remove portrait for ${memberName}?`)) return;
+        const oldFileId = managedTeamMembers[index]?.image?.id;
         const updatedList = [...managedTeamMembers];
         updatedList[index] = { ...updatedList[index], image: null };
         setManagedTeamMembers(updatedList);
         setIsTeamMembersDirty(true);
+        if (oldFileId) {
+            try {
+                await adminApi.deleteFile(oldFileId);
+            } catch (err) {
+                console.warn("Could not delete old member photo:", err);
+            }
+        }
     };
 
     const handleUpdateMemberField = (index, field, value) => {
@@ -723,12 +747,21 @@ const AdminDashboard = () => {
         setIsTeamMembersDirty(true);
     };
 
-    const handleDeleteMember = (index) => {
-        const memberName = managedTeamMembers[index]?.name || `Member #${index + 1}`;
+    const handleDeleteMember = async (index) => {
+        const member = managedTeamMembers[index];
+        const memberName = member?.name || `Member #${index + 1}`;
         if (window.confirm(`Are you sure you want to remove ${memberName} from Meet The Team?`)) {
+            const oldFileId = member?.image?.id;
             const updatedList = managedTeamMembers.filter((_, i) => i !== index);
             setManagedTeamMembers(updatedList);
             setIsTeamMembersDirty(true);
+            if (oldFileId) {
+                try {
+                    await adminApi.deleteFile(oldFileId);
+                } catch (err) {
+                    console.warn("Could not delete old member photo:", err);
+                }
+            }
         }
     };
 
@@ -1061,6 +1094,15 @@ const AdminDashboard = () => {
                     toast.update(toastId, { render: "Uploading WebM video..." });
                     const uploaded = await adminApi.uploadFile(videoFile);
                     updatedPayload.heroVideo = { id: uploaded.id };
+
+                    // Delete old hero video file from Aaly storage to keep it clean
+                    if (siteConfig && siteConfig.heroVideo && siteConfig.heroVideo.id) {
+                        try {
+                            await adminApi.deleteFile(siteConfig.heroVideo.id);
+                        } catch (err) {
+                            console.warn("Could not delete old hero video file:", err);
+                        }
+                    }
                 }
 
                 if (newHeroVideoThumb) {
@@ -1073,6 +1115,15 @@ const AdminDashboard = () => {
                     toast.update(toastId, { render: "Uploading video thumbnail..." });
                     const upThumb = await adminApi.uploadFile(webpThumb);
                     updatedPayload.heroVideoThumb = { id: upThumb.id };
+
+                    // Delete old hero thumbnail file from Aaly storage
+                    if (siteConfig && siteConfig.heroVideoThumb && siteConfig.heroVideoThumb.id) {
+                        try {
+                            await adminApi.deleteFile(siteConfig.heroVideoThumb.id);
+                        } catch (err) {
+                            console.warn("Could not delete old hero thumbnail file:", err);
+                        }
+                    }
                 }
             } else if (activeTab === 'home_folio') {
                 if (newFolioImages.length === 0) {

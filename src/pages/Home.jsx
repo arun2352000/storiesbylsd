@@ -197,6 +197,7 @@ const Home = () => {
                 {/* Hero Video - Present in DOM immediately, streams when API responds and fades in when playing */}
                 <video
                     ref={videoRef}
+                    src={heroVideoSrc || undefined}
                     className={`absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:min-w-full md:min-h-full md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90 transition-opacity duration-700 ${isVideoActive ? 'opacity-100' : 'opacity-0'}`}
                     loop
                     autoPlay
@@ -209,12 +210,6 @@ const Home = () => {
                         e.target.play().catch(() => {});
                     }}
                 >
-                    {heroVideoSrc && (
-                        <>
-                            <source src={heroVideoSrc} type="video/webm" />
-                            <source src={heroVideoSrc} type="video/mp4" />
-                        </>
-                    )}
                     Your browser does not support the video tag.
                 </video>
 
