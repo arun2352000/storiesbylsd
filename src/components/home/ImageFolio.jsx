@@ -1,4 +1,5 @@
 import React from 'react';
+import Masonry from 'react-masonry-css';
 
 const ImageFolio = ({ images }) => {
     if (!images || images.length === 0) return null;
@@ -27,13 +28,13 @@ const ImageFolio = ({ images }) => {
         );
     };
 
-    // Single photo tile for Mobile/Tablet natural vertical flow (zero gaps)
+    // Single photo tile for Mobile/Tablet natural vertical flow (zero gaps, true masonry)
     const renderFlowTile = (img, index) => {
         if (!img) return null;
         return (
             <div 
                 key={img.id || index} 
-                className="relative overflow-hidden group bg-[#383a29] w-full min-h-[180px] sm:min-h-[240px]"
+                className="relative overflow-hidden group w-full mb-0.5 sm:mb-1"
             >
                 <img 
                     src={img.url || img.downloadUrl} 
@@ -120,23 +121,11 @@ const ImageFolio = ({ images }) => {
         );
     };
 
-    // Distribute images for Mobile (2 columns)
-    const mobileCol1 = [];
-    const mobileCol2 = [];
-    displayImages.forEach((img, idx) => {
-        if (idx % 2 === 0) mobileCol1.push({ img, idx });
-        else mobileCol2.push({ img, idx });
-    });
-
-    // Distribute images for Tablet (3 columns)
-    const tabletCol1 = [];
-    const tabletCol2 = [];
-    const tabletCol3 = [];
-    displayImages.forEach((img, idx) => {
-        if (idx % 3 === 0) tabletCol1.push({ img, idx });
-        else if (idx % 3 === 1) tabletCol2.push({ img, idx });
-        else tabletCol3.push({ img, idx });
-    });
+    const masonryBreakpointCols = {
+        default: 3,
+        1023: 3,
+        639: 2
+    };
 
     return (
         <section className="w-full bg-[#424530] overflow-hidden select-none">
@@ -155,27 +144,15 @@ const ImageFolio = ({ images }) => {
                 )}
             </div>
 
-            {/* 2. TABLET VIEW (640px to 1023px): 3 flex-columns with natural flow and ZERO black gaps */}
-            <div className="hidden sm:flex lg:hidden flex-row w-full gap-0 p-0 m-0">
-                <div className="w-1/3 flex flex-col gap-0 p-0 m-0">
-                    {tabletCol1.map(({ img, idx }) => renderFlowTile(img, idx))}
-                </div>
-                <div className="w-1/3 flex flex-col gap-0 p-0 m-0">
-                    {tabletCol2.map(({ img, idx }) => renderFlowTile(img, idx))}
-                </div>
-                <div className="w-1/3 flex flex-col gap-0 p-0 m-0">
-                    {tabletCol3.map(({ img, idx }) => renderFlowTile(img, idx))}
-                </div>
-            </div>
-
-            {/* 3. MOBILE VIEW (< 640px): 2 flex-columns with natural flow and ZERO black gaps */}
-            <div className="flex sm:hidden flex-row w-full gap-0 p-0 m-0">
-                <div className="w-1/2 flex flex-col gap-0 p-0 m-0">
-                    {mobileCol1.map(({ img, idx }) => renderFlowTile(img, idx))}
-                </div>
-                <div className="w-1/2 flex flex-col gap-0 p-0 m-0">
-                    {mobileCol2.map(({ img, idx }) => renderFlowTile(img, idx))}
-                </div>
+            {/* 2. MOBILE & TABLET VIEW (< 1024px): Balanced Masonry with ZERO gaps */}
+            <div className="block lg:hidden w-full p-0.5 sm:p-1">
+                <Masonry
+                    breakpointCols={masonryBreakpointCols}
+                    className="flex w-full gap-0.5 sm:gap-1"
+                    columnClassName="flex flex-col gap-0.5 sm:gap-1"
+                >
+                    {displayImages.map((img, idx) => renderFlowTile(img, idx))}
+                </Masonry>
             </div>
         </section>
     );
