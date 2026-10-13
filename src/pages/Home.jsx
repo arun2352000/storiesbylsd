@@ -11,8 +11,6 @@ import ImageFolio from '../components/home/ImageFolio';
 import AboutUsPreview from '../components/home/AboutUsPreview';
 import ContactForm from '../components/common/ContactForm';
 import contactBg from '../assets/image/Backgrou image/image 2.png';
-import heroPosterHorizontal from '../assets/image/hero-poster-horizontal.webp';
-import heroPosterVertical from '../assets/image/hero-poster.webp';
 
 
 const Home = () => {
@@ -199,8 +197,8 @@ const Home = () => {
             {/* Hero Section - Loads instantly on mount with High-Priority Thumbnail/Poster */}
             <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
                 {/* Hero Thumbnail / Poster: When hero thumbnail is provided in CMS, take it from there */}
-                <div className="absolute inset-0 w-full h-full pointer-events-none">
-                    {heroThumbUrl ? (
+                {heroThumbUrl && (
+                    <div className="absolute inset-0 w-full h-full pointer-events-none">
                         <img 
                             key={heroThumbUrl}
                             src={heroThumbUrl} 
@@ -210,25 +208,13 @@ const Home = () => {
                             loading="eager"
                             decoding="sync"
                         />
-                    ) : (
-                        <picture className="w-full h-full">
-                            <source media="(min-width: 768px)" srcSet={heroPosterHorizontal} />
-                            <img 
-                                src={heroPosterVertical} 
-                                alt="LSD Stories Hero" 
-                                className="w-full h-full object-cover"
-                                fetchPriority="high"
-                                loading="eager"
-                                decoding="sync"
-                            />
-                        </picture>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* Hero Video - Present in DOM immediately, streams when API responds and fades in when playing */}
                 <video
                     ref={videoRef}
-                    poster={heroThumbUrl ? undefined : heroPosterVertical}
+                    poster={heroThumbUrl || undefined}
                     className={`absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90 transition-opacity duration-700 ${isVideoActive ? 'opacity-100' : 'opacity-0'}`}
                     loop
                     autoPlay
