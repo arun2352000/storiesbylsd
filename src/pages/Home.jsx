@@ -98,7 +98,6 @@ const Home = () => {
     // Handle immediate play when hero video source is hydrated from API
     useEffect(() => {
         if (heroVideoSrc && videoRef.current) {
-            videoRef.current.load();
             videoRef.current.muted = true;
             videoRef.current.play().catch((err) => {
                 console.log("Initial autoplay deferred:", err);
@@ -205,10 +204,6 @@ const Home = () => {
                     preload="metadata"
                     playsInline
                     onPlaying={() => setIsVideoActive(true)}
-                    onCanPlay={(e) => {
-                        e.target.muted = true;
-                        e.target.play().catch(() => {});
-                    }}
                 >
                     Your browser does not support the video tag.
                 </video>
