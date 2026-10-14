@@ -34,12 +34,12 @@ const AboutUsPreview = ({ teamImages = [], teamGrid = '2x3' }) => {
     };
 
     return (
-        <section className="bg-[#424530] text-white py-16 md:py-24 overflow-hidden relative">
-            <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center gap-12 md:gap-16 lg:gap-20">
+        <section className="bg-[#424530] text-white pt-20 pb-16 md:py-24 overflow-hidden relative">
+            <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center gap-8 md:gap-16 lg:gap-20">
                 
                 {/* Mobile Heading (Shown above team images on mobile screens) */}
-                <div className="w-full text-center md:hidden mb-2">
-                    <h2 className="font-serif text-3xl text-brand-cream tracking-wide">ABOUT US</h2>
+                <div className="w-full text-center md:hidden mb-4">
+                    <h2 className="font-serif text-3xl sm:text-4xl text-brand-cream tracking-wide">ABOUT US</h2>
                 </div>
 
                 {/* Team Grid */}
