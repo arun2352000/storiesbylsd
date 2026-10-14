@@ -4,6 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 import VideoCard from '../components/common/VideoCard';
 import VideoModal from '../components/common/VideoModal';
 import { api } from '../services/api';
+import SEO from '../components/common/SEO';
 import backgroundImage from '../assets/image/Backgrou image/image 2.png';
 
 const WeddingFilms = () => {
@@ -39,6 +40,11 @@ const WeddingFilms = () => {
 
     return (
         <MainLayout>
+            <SEO 
+                title="Cinematic Wedding Films & Teasers | Stories by LSD"
+                description="Watch our handcrafted cinematic wedding films, highlight teasers, and trailers capturing authentic love stories and grand celebrations."
+                canonical="https://www.storiesbylsd.com/wedding-films"
+            />
             {/* Hero Section */}
             <div className="relative h-screen w-full bg-[#424530] flex items-center justify-center overflow-hidden">
                 {/* Background Image */}

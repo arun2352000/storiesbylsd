@@ -10,6 +10,7 @@ import ScrollReveal from '../components/common/ScrollReveal';
 import ImageFolio from '../components/home/ImageFolio';
 import AboutUsPreview from '../components/home/AboutUsPreview';
 import ContactForm from '../components/common/ContactForm';
+import SEO from '../components/common/SEO';
 import contactBg from '../assets/image/Backgrou image/image 2.png';
 
 
@@ -228,6 +229,11 @@ const Home = () => {
 
     return (
         <MainLayout>
+            <SEO 
+                title="Stories by LSD | Candid Wedding Photography & Films | Chennai"
+                description="Stories by LSD is a premier wedding photography and cinematic films team in Chennai. Capturing authentic emotions, timeless wedding stories, and joyful celebrations."
+                canonical="https://www.storiesbylsd.com/"
+            />
             {/* Hero Section - Loads instantly on mount with High-Priority Thumbnail/Poster */}
             <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
                 {/* Hero Title Poster: Rendered with high priority to show immediately before video plays */}

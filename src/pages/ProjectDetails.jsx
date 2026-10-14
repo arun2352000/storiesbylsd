@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import logoMark from '../assets/image/logo/LogoMark.png';
 import ImageWithLoader from '../components/common/ImageWithLoader';
 import Masonry from 'react-masonry-css';
+import SEO from '../components/common/SEO';
 
 const ProjectDetails = () => {
     const { id } = useParams();
@@ -51,8 +52,20 @@ const ProjectDetails = () => {
         );
     }
 
+    const projectTitle = project.title || 'Wedding Story';
+    const projectDesc = project.subtitle || project.description || `Explore the heartfelt wedding moments and candid photography of ${projectTitle} by Stories by LSD.`;
+    const projectImg = project.heroImage?.url || project.heroImage;
+    const projectCanonical = `https://www.storiesbylsd.com/project/${id}`;
+
     return (
         <MainLayout>
+            <SEO
+                title={`${projectTitle} | Stories by LSD Wedding Photography`}
+                description={projectDesc}
+                canonical={projectCanonical}
+                ogImage={projectImg}
+                ogType="article"
+            />
             {/* Hero Section */}
             <section className="relative h-screen w-full overflow-hidden">
                 <div className="absolute inset-0">

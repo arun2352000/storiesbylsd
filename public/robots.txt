@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /admin/*
+
+Sitemap: https://www.storiesbylsd.com/sitemap.xml

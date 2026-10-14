@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import Card from '../components/common/Card';
 import { api } from '../services/api';
+import SEO from '../components/common/SEO';
 import backgroundImage from '../assets/image/Backgrou image/image 2.png';
 
 const Photography = () => {
@@ -27,6 +28,11 @@ const Photography = () => {
 
     return (
         <MainLayout>
+            <SEO 
+                title="Wedding Photography Portfolio | Stories by LSD Chennai"
+                description="Browse our curated wedding photography gallery capturing candid moments, sacred rituals, and joyful celebrations across Chennai and South India."
+                canonical="https://www.storiesbylsd.com/photography"
+            />
             {/* Hero Section */}
             <div className="relative h-screen w-full bg-[#424530] flex items-center justify-center overflow-hidden">
                 {/* Background Image */}

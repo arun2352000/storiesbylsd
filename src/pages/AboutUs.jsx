@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import SEO from '../components/common/SEO';
 import heroBackground from '../assets/image/Backgrou image/AND03973 1.png';
 import howWeWorkBg from '../assets/image/Backgrou image/Layer 1 1.png';
 
@@ -173,6 +174,11 @@ const AboutUs = () => {
 
     return (
         <MainLayout>
+            <SEO
+                title="About Us | Stories by LSD Wedding Photography Studio"
+                description="Meet the passionate team behind Stories by LSD based in Chennai. Learn how we capture authentic wedding stories with emotion, artistry, and heart."
+                canonical="https://www.storiesbylsd.com/about-us"
+            />
             {/* Hero Section */}
             <div className="relative h-screen w-full bg-[#424530] flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0">
