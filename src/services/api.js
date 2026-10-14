@@ -51,6 +51,23 @@ export const api = {
         }
     },
 
+    // Dedicated fast call for hero title poster image
+    getHeroPoster: async () => {
+        try {
+            const response = await fetch(`${AALY_BASE_URL}/site_config/public?limit=1`);
+            if (!response.ok) return null;
+            const data = await response.json();
+            const config = (data.items && data.items.length > 0) ? data.items[0] : null;
+            if (config && config.heroVideoThumb) {
+                return config.heroVideoThumb.url || config.heroVideoThumb.downloadUrl || config.heroVideoThumb;
+            }
+            return null;
+        } catch (error) {
+            console.error('Failed to fetch hero poster:', error);
+            return null;
+        }
+    },
+
     // Get all films
     getAllFilms: async () => {
         try {

@@ -37,7 +37,12 @@ const AboutUsPreview = ({ teamImages = [], teamGrid = '2x3' }) => {
         <section className="bg-[#424530] text-white py-16 md:py-24 overflow-hidden relative">
             <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex flex-col md:flex-row items-center gap-12 md:gap-16 lg:gap-20">
                 
-                {/* Left Side: Team Grid */}
+                {/* Mobile Heading (Shown above team images on mobile screens) */}
+                <div className="w-full text-center md:hidden mb-2">
+                    <h2 className="font-serif text-3xl text-brand-cream tracking-wide">ABOUT US</h2>
+                </div>
+
+                {/* Team Grid */}
                 <div className={containerWidthClass}>
                     <div className={`grid ${gridColsClass} gap-0 border-t border-l border-white/10`}>
                         {finalImages.map((img, index) => (
@@ -57,9 +62,9 @@ const AboutUsPreview = ({ teamImages = [], teamGrid = '2x3' }) => {
 
                 {/* Right Side: Text & Button */}
                 <div className="w-full md:w-[40%] lg:w-[45%] flex flex-col justify-center">
-                    <h2 className="font-serif text-3xl md:text-5xl mb-6 text-brand-cream tracking-wide">ABOUT US</h2>
+                    <h2 className="hidden md:block font-serif text-3xl md:text-5xl mb-6 text-brand-cream tracking-wide">ABOUT US</h2>
                     
-                    <div className="text-gray-300 font-light text-sm md:text-base leading-relaxed space-y-5 mb-10">
+                    <div className="text-gray-300 font-light text-sm md:text-base leading-relaxed space-y-5 mb-10 text-center md:text-left">
                         <p>
                             "Our Team is a bunch of storytelling enthusiasts with cameras—young, energetic, and hopelessly in love with love! We turn every wedding into a cinematic adventure, capturing all the laughter, happy tears, and those candid moments you'll cherish forever.
                         </p>
@@ -68,7 +73,7 @@ const AboutUsPreview = ({ teamImages = [], teamGrid = '2x3' }) => {
                         </p>
                     </div>
 
-                    <div>
+                    <div className="text-center md:text-left">
                         <button 
                             onClick={scrollToContact}
                             className="border border-brand-cream text-brand-cream px-8 py-3 text-xs md:text-sm tracking-[0.2em] uppercase hover:bg-brand-cream hover:text-black transition-colors duration-300"

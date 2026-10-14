@@ -29,6 +29,20 @@ const Home = () => {
             return null;
         }
     });
+    const [heroThumbUrl, setHeroThumbUrl] = useState(() => {
+        try {
+            const cachedThumb = localStorage.getItem('lsd_hero_thumb');
+            if (cachedThumb) return cachedThumb;
+            const cached = localStorage.getItem('lsd_site_config');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed && parsed.heroVideoThumb) {
+                    return parsed.heroVideoThumb.url || parsed.heroVideoThumb.downloadUrl || parsed.heroVideoThumb;
+                }
+            }
+        } catch {}
+        return null;
+    });
     const [heroVideoSrc, setHeroVideoSrc] = useState(() => {
         try {
             const cached = localStorage.getItem('lsd_site_config');
@@ -42,6 +56,20 @@ const Home = () => {
         return null;
     });
     const [loading, setLoading] = useState(true);
+
+    // Fast independent fetch for Hero Poster so it renders before the video or heavy payloads
+    useEffect(() => {
+        let isMounted = true;
+        api.getHeroPoster().then(posterUrl => {
+            if (isMounted && posterUrl) {
+                setHeroThumbUrl(posterUrl);
+                try {
+                    localStorage.setItem('lsd_hero_thumb', posterUrl);
+                } catch {}
+            }
+        });
+        return () => { isMounted = false; };
+    }, []);
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -60,6 +88,15 @@ const Home = () => {
 
                     if (fetchedSiteConfig.heroVideo && (fetchedSiteConfig.heroVideo.url || typeof fetchedSiteConfig.heroVideo === 'string')) {
                         setHeroVideoSrc(fetchedSiteConfig.heroVideo.url || fetchedSiteConfig.heroVideo);
+                    }
+                    if (fetchedSiteConfig.heroVideoThumb) {
+                        const thumb = fetchedSiteConfig.heroVideoThumb.url || fetchedSiteConfig.heroVideoThumb.downloadUrl || fetchedSiteConfig.heroVideoThumb;
+                        if (thumb) {
+                            setHeroThumbUrl(thumb);
+                            try {
+                                localStorage.setItem('lsd_hero_thumb', thumb);
+                            } catch {}
+                        }
                     }
                 }
             } catch (error) {
@@ -193,11 +230,29 @@ const Home = () => {
         <MainLayout>
             {/* Hero Section - Loads instantly on mount with High-Priority Thumbnail/Poster */}
             <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
-                {/* Hero Video - Present in DOM immediately, streams when API responds and fades in when playing */}
+                {/* Hero Title Poster: Rendered with high priority to show immediately before video plays */}
+                {heroThumbUrl && (
+                    <div 
+                        className={`absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-700 z-0 ${
+                            isVideoActive ? 'opacity-0' : 'opacity-100'
+                        }`}
+                    >
+                        <img
+                            src={heroThumbUrl}
+                            alt="Stories by LSD Hero"
+                            fetchPriority="high"
+                            loading="eager"
+                            decoding="async"
+                            className="w-full h-full object-cover"
+                        />
+                    </div>
+                )}
+
+                {/* Hero Video - Present in DOM immediately, streams and fades in when playing */}
                 <video
                     ref={videoRef}
                     src={heroVideoSrc || undefined}
-                    className={`absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:min-w-full md:min-h-full md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90 transition-opacity duration-700 ${isVideoActive ? 'opacity-100' : 'opacity-0'}`}
+                    className={`absolute inset-0 w-full h-full object-cover md:inset-auto md:top-1/2 md:left-1/2 md:w-[100vh] md:h-[100vw] md:min-w-full md:min-h-full md:max-w-none md:-translate-x-1/2 md:-translate-y-1/2 md:-rotate-90 transition-opacity duration-700 z-0 ${isVideoActive ? 'opacity-100' : 'opacity-0'}`}
                     loop
                     autoPlay
                     muted
@@ -208,7 +263,7 @@ const Home = () => {
                     Your browser does not support the video tag.
                 </video>
 
-                <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+                <div className="absolute inset-0 bg-black/20 pointer-events-none z-10" />
             </section>
 
             {/* 2. Image Folio Section */}
