@@ -51,9 +51,10 @@ const TeamMemberCard = ({ member }) => {
                 {photoUrl ? (
                     <img
                         src={photoUrl}
-                        alt={member?.name || 'Team Member'}
+                        alt={member?.name ? `${member.name} - Stories by LSD Wedding Photographer` : 'Stories by LSD Wedding Photographer'}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
+                        decoding="async"
                         onError={() => setImgFailed(true)}
                     />
                 ) : (

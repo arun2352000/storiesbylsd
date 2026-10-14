@@ -7,9 +7,12 @@ const Card = ({
     lowResImage,
     title,
     date,
+    alt,
     className = '',
     onClick
 }) => {
+    const computedAlt = alt || (title ? `${title} - Candid Wedding Photography Chennai | Stories by LSD` : 'Stories by LSD Wedding Photography');
+
     return (
         <div
             className={`group relative overflow-hidden cursor-pointer rounded-lg ${className}`}
@@ -19,7 +22,7 @@ const Card = ({
                 <ImageWithLoader
                     src={image}
                     lowResSrc={lowResImage}
-                    alt={title}
+                    alt={computedAlt}
                     className="h-full w-full"
                     imgClassName="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />

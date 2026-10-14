@@ -18,7 +18,7 @@ const ImageFolio = ({ images }) => {
             >
                 <img 
                     src={img.url || img.downloadUrl} 
-                    alt={`Wedding photography portfolio photo ${index + 1}`} 
+                    alt={`Stories by LSD Wedding Photography Chennai - Portfolio Moment ${index + 1}`} 
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     loading="lazy"
                     decoding="async"
@@ -38,7 +38,7 @@ const ImageFolio = ({ images }) => {
             >
                 <img 
                     src={img.url || img.downloadUrl} 
-                    alt={`Wedding photography portfolio photo ${index + 1}`} 
+                    alt={`Stories by LSD Wedding Photography Chennai - Portfolio Moment ${index + 1}`} 
                     className="w-full h-auto object-cover block transition-transform duration-700 ease-out group-hover:scale-105"
                     loading="lazy"
                     decoding="async"

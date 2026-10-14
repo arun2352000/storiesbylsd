@@ -1,0 +1,27 @@
+{
+  "short_name": "Stories by LSD",
+  "name": "Stories by LSD | Wedding Photography & Films",
+  "description": "Premier candid wedding photography and cinematic films studio based in Chennai, India.",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#424530",
+  "theme_color": "#424530",
+  "display": "standalone",
+  "orientation": "portrait"
+}

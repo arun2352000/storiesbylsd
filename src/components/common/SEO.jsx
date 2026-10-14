@@ -72,6 +72,13 @@ const SEO = ({
         } else if (scriptTag) {
             scriptTag.remove();
         }
+
+        return () => {
+            const dynamicScript = document.getElementById('json-ld-schema');
+            if (dynamicScript) {
+                dynamicScript.remove();
+            }
+        };
     }, [title, description, canonical, ogImage, ogType, schema]);
 
     return null;

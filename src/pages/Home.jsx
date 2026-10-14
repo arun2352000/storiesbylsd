@@ -245,7 +245,7 @@ const Home = () => {
                     >
                         <img
                             src={heroThumbUrl}
-                            alt="Stories by LSD Hero"
+                            alt="Stories by LSD Candid Wedding Photography & Films Chennai"
                             fetchPriority="high"
                             loading="eager"
                             decoding="async"

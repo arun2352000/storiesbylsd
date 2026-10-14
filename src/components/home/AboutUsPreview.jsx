@@ -51,8 +51,9 @@ const AboutUsPreview = ({ teamImages = [], teamGrid = '2x3' }) => {
                                     <img 
                                         src={img.url || img.downloadUrl} 
                                         className="w-full h-full object-cover transition-transform duration-700 hover:scale-105" 
-                                        alt={`Team ${index + 1}`}
+                                        alt={`Stories by LSD Wedding Photography Team Member ${index + 1}`}
                                         loading="lazy"
+                                        decoding="async"
                                     />
                                 )}
                             </div>

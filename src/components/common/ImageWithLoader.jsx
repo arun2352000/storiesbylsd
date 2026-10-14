@@ -18,14 +18,16 @@ const ImageWithLoader = ({ src, lowResSrc, alt, className = "", imgClassName = "
                         <img 
                             src={lowResSrc} 
                             alt="" 
+                            aria-hidden="true"
                             className={`absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-70`}
                         />
                     )}
                     {/* High Res Image */}
                     <img
                         src={src}
-                        alt={alt}
+                        alt={alt || "Stories by LSD Wedding Photography Chennai"}
                         loading="lazy"
+                        decoding="async"
                         onLoad={() => setIsLoaded(true)}
                         onError={() => { setIsLoaded(true); setHasError(true); }}
                         className={`w-full h-auto block transition-all duration-700 ease-in-out relative z-10 ${isLoaded ? 'opacity-100 blur-0' : 'opacity-0'} ${imgClassName}`}

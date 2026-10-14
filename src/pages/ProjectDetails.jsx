@@ -57,6 +57,31 @@ const ProjectDetails = () => {
     const projectImg = project.heroImage?.url || project.heroImage;
     const projectCanonical = `https://www.storiesbylsd.com/project/${id}`;
 
+    const breadcrumbSchema = {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://www.storiesbylsd.com/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Photography",
+                "item": "https://www.storiesbylsd.com/photography"
+            },
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": projectTitle,
+                "item": projectCanonical
+            }
+        ]
+    };
+
     return (
         <MainLayout>
             <SEO
@@ -65,6 +90,7 @@ const ProjectDetails = () => {
                 canonical={projectCanonical}
                 ogImage={projectImg}
                 ogType="article"
+                schema={breadcrumbSchema}
             />
             {/* Hero Section */}
             <section className="relative h-screen w-full overflow-hidden">
@@ -72,7 +98,7 @@ const ProjectDetails = () => {
                     <ImageWithLoader
                         src={project.heroImage?.url || project.heroImage}
                         lowResSrc={project.heroImageLowRes?.url || project.heroImageLowRes}
-                        alt={project.title}
+                        alt={`${project.title || 'Wedding Story'} - Candid Wedding Photography Chennai by Stories by LSD`}
                         className="w-full h-full"
                         imgClassName="w-full h-full object-cover"
                     />
@@ -82,7 +108,7 @@ const ProjectDetails = () => {
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center z-10 p-4">
                     {/* Logo Section */}
                     <div className="mb-6 opacity-90">
-                        <img src={logoMark} alt="Logo" className="w-16 md:w-20" />
+                        <img src={logoMark} alt="Stories by LSD Emblem" className="w-16 md:w-20" />
                     </div>
 
                     <h1 className="font-serif text-3xl sm:text-4xl md:text-6xl lg:text-7xl mb-6 tracking-wide leading-tight">
@@ -124,7 +150,7 @@ const ProjectDetails = () => {
                                 <ImageWithLoader
                                     src={img?.url || img}
                                     lowResSrc={lowResImg}
-                                    alt={`Gallery image ${index + 1}`}
+                                    alt={`${project.title || 'Wedding'} Photography Moment ${index + 1} | Stories by LSD Chennai`}
                                     imgClassName="hover:opacity-95 transition-opacity duration-300"
                                     loading="lazy"
                                 />
