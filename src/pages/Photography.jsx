@@ -29,8 +29,8 @@ const Photography = () => {
     const gallerySchema = projects.length > 0 ? {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
-        "name": "Wedding Photography Portfolio | Stories by LSD",
-        "description": "Curated collection of wedding photography stories and candid moments in Chennai and South India.",
+        "name": "Wedding Photography Portfolio | Stories by LSD India",
+        "description": "Curated collection of wedding photography stories and candid moments captured across India and worldwide destinations.",
         "hasPart": projects.map(item => ({
             "@type": "CreativeWork",
             "name": item.title,
@@ -42,8 +42,8 @@ const Photography = () => {
     return (
         <MainLayout>
             <SEO 
-                title="Wedding Photography Portfolio | Stories by LSD Chennai"
-                description="Browse our curated wedding photography gallery capturing candid moments, sacred rituals, and joyful celebrations across Chennai and South India."
+                title="Wedding Photography Portfolio | Stories by LSD India"
+                description="Browse our curated wedding photography gallery capturing candid moments, sacred rituals, and joyful celebrations across India and destination weddings."
                 canonical="https://www.storiesbylsd.com/photography"
                 schema={gallerySchema}
             />
@@ -81,7 +81,7 @@ const Photography = () => {
                                     key={item.id || item._id || index}
                                     title={item.title}
                                     date={item.date}
-                                    alt={`${item.title} - Candid Wedding Photography in Chennai by Stories by LSD`}
+                                    alt={`${item.title} - Candid Wedding Photography in India by Stories by LSD`}
                                     image={item.heroImage?.url || item.heroImage}
                                     lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
                                     className={index % 2 === 0 ? "h-[40vh] sm:h-[50vh] md:h-[60vh]" : "h-[60vh] sm:h-[75vh] md:h-[90vh]"}
@@ -96,7 +96,7 @@ const Photography = () => {
                                     key={item.id || item._id || index}
                                     title={item.title}
                                     date={item.date}
-                                    alt={`${item.title} - Candid Wedding Photography in Chennai by Stories by LSD`}
+                                    alt={`${item.title} - Candid Wedding Photography in India by Stories by LSD`}
                                     image={item.heroImage?.url || item.heroImage}
                                     lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
                                     className={index % 2 === 0 ? "h-[60vh] sm:h-[75vh] md:h-[90vh]" : "h-[40vh] sm:h-[50vh] md:h-[60vh]"}

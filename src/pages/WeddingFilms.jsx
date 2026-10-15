@@ -41,8 +41,8 @@ const WeddingFilms = () => {
     const videoSchema = films.length > 0 ? {
         "@context": "https://schema.org",
         "@type": "ItemList",
-        "name": "Stories by LSD Wedding Films Portfolio",
-        "description": "Curated collection of cinematic wedding films and teasers in Chennai and South India.",
+        "name": "Stories by LSD Wedding Films Portfolio | India",
+        "description": "Curated collection of cinematic wedding films and teasers across India and destination weddings worldwide.",
         "itemListElement": films.map((film, index) => {
             const thumbUrl = film.thumbnail?.url || (typeof film.thumbnail === 'string' ? film.thumbnail : 'https://www.storiesbylsd.com/assets/PRIMARY%20LOGO-DkWJIAri.png');
             return {
@@ -51,7 +51,7 @@ const WeddingFilms = () => {
                 "item": {
                     "@type": "VideoObject",
                     "name": film.title || "Cinematic Wedding Film",
-                    "description": `${film.title || 'Wedding Film'} - Handcrafted wedding teaser and cinematic film by Stories by LSD Chennai.`,
+                    "description": `${film.title || 'Wedding Film'} - Handcrafted wedding teaser and cinematic film by Stories by LSD India.`,
                     "thumbnailUrl": [thumbUrl],
                     "uploadDate": film.date || "2024-01-01",
                     "contentUrl": film.videoUrl,
@@ -64,8 +64,8 @@ const WeddingFilms = () => {
     return (
         <MainLayout>
             <SEO 
-                title="Cinematic Wedding Films & Teasers | Stories by LSD"
-                description="Watch our handcrafted cinematic wedding films, highlight teasers, and trailers capturing authentic love stories and grand celebrations."
+                title="Cinematic Wedding Films & Teasers | Stories by LSD India"
+                description="Watch our handcrafted cinematic wedding films, highlight teasers, and trailers capturing authentic love stories and destination weddings across India."
                 canonical="https://www.storiesbylsd.com/wedding-films"
                 schema={videoSchema}
             />

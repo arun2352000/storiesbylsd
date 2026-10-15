@@ -51,7 +51,7 @@ const TeamMemberCard = ({ member }) => {
                 {photoUrl ? (
                     <img
                         src={photoUrl}
-                        alt={member?.name ? `${member.name} - Stories by LSD Wedding Photographer` : 'Stories by LSD Wedding Photographer'}
+                        alt={member?.name ? `${member.name} - Stories by LSD Wedding Photographer | India` : 'Stories by LSD Wedding Photographer | India'}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         loading="lazy"
                         decoding="async"
@@ -176,8 +176,8 @@ const AboutUs = () => {
     return (
         <MainLayout>
             <SEO
-                title="About Us | Stories by LSD Wedding Photography Studio"
-                description="Meet the passionate team behind Stories by LSD based in Chennai. Learn how we capture authentic wedding stories with emotion, artistry, and heart."
+                title="About Us | Stories by LSD Wedding Photography Team India"
+                description="Meet the passionate team behind Stories by LSD. Headquartered in Chennai, our photographers and cinematographers travel Pan-India and worldwide to document genuine love stories."
                 canonical="https://www.storiesbylsd.com/about-us"
             />
             {/* Hero Section */}
@@ -203,7 +203,7 @@ const AboutUs = () => {
                         <h2 className="text-2xl md:text-3xl font-light mb-6 tracking-wide text-[#FFEFCD]">WHO ARE WE?</h2>
                         <div className="space-y-4 text-gray-300 font-light text-sm md:text-base leading-relaxed">
                             <p>
-                                We're a group of passionate storytellers armed with cameras and fueled by love. Based in Chennai, LSD
+                                We're a group of passionate storytellers armed with cameras and fueled by love. Headquartered in Chennai and traveling Pan-India and worldwide, LSD
                                 Production believes that every wedding is a cinematic narrative worth cherishing.
                             </p>
                             <p>

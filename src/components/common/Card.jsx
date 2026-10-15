@@ -11,7 +11,7 @@ const Card = ({
     className = '',
     onClick
 }) => {
-    const computedAlt = alt || (title ? `${title} - Candid Wedding Photography Chennai | Stories by LSD` : 'Stories by LSD Wedding Photography');
+    const computedAlt = alt || (title ? `${title} - Candid Wedding Photography India | Stories by LSD` : 'Stories by LSD Wedding Photography India');
 
     return (
         <div

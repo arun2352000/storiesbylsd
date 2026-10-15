@@ -25,7 +25,7 @@ const ImageWithLoader = ({ src, lowResSrc, alt, className = "", imgClassName = "
                     {/* High Res Image */}
                     <img
                         src={src}
-                        alt={alt || "Stories by LSD Wedding Photography Chennai"}
+                        alt={alt || "Stories by LSD Candid Wedding Photography India"}
                         loading="lazy"
                         decoding="async"
                         onLoad={() => setIsLoaded(true)}

@@ -8,8 +8,8 @@ const ContactUs = () => {
     return (
         <MainLayout>
             <SEO
-                title="Contact Us | Book Wedding Photography in Chennai | Stories by LSD"
-                description="Get in touch with Stories by LSD to check wedding photography availability, packages, and book your date. Chennai, destination, and candid weddings."
+                title="Book Stories by LSD | Destination Wedding Photographers India"
+                description="Get in touch with Stories by LSD to check wedding photography availability, packages, and book your date for weddings across India and worldwide destinations."
                 canonical="https://www.storiesbylsd.com/contact-us"
             />
             <div className="relative min-h-screen w-full bg-[#424530] flex items-center justify-center overflow-hidden py-20 pt-24 sm:pt-20">
@@ -28,6 +28,9 @@ const ContactUs = () => {
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-serif text-brand-cream tracking-wider mb-2">
                             BEGIN YOUR STORY
                         </h1>
+                        <p className="text-[11px] sm:text-xs text-brand-cream/80 uppercase tracking-[0.25em] font-light mt-2">
+                            Available Pan-India & Worldwide for Destination Weddings
+                        </p>
                     </div>
                     <ContactForm />
                 </div>

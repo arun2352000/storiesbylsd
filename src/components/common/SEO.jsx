@@ -5,8 +5,8 @@ import { useEffect } from 'react';
  * canonical link, and JSON-LD structured data in single page applications.
  */
 const SEO = ({
-    title = 'Stories by LSD | Wedding Photography & Cinematic Films | Chennai',
-    description = 'Premier wedding photography and cinematic films based in Chennai. Capturing authentic emotions, candid celebrations, and timeless wedding stories across South India.',
+    title = 'Stories by LSD | Luxury Candid Wedding Photography & Films | India',
+    description = 'Stories by LSD is a luxury candid wedding photography and cinematic films studio based in India. Capturing authentic emotions, celebrations, and timeless wedding stories across India and worldwide.',
     canonical = 'https://www.storiesbylsd.com/',
     ogImage = 'https://www.storiesbylsd.com/assets/PRIMARY%20LOGO-DkWJIAri.png',
     ogType = 'website',
@@ -32,7 +32,7 @@ const SEO = ({
 
         // 2. Standard Meta Tags
         setMetaTag('name', 'description', description);
-        setMetaTag('name', 'keywords', 'wedding photography chennai, candid wedding photographer chennai, wedding films chennai, luxury wedding photography, stories by lsd');
+        setMetaTag('name', 'keywords', 'wedding photography india, candid wedding photographer india, destination wedding photography, luxury wedding cinematography, wedding films india, stories by lsd, best wedding photographers in india, chennai wedding photography');
 
         // 3. Open Graph Meta Tags
         setMetaTag('property', 'og:title', title);

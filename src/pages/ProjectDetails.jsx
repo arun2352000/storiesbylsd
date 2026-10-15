@@ -85,7 +85,7 @@ const ProjectDetails = () => {
     return (
         <MainLayout>
             <SEO
-                title={`${projectTitle} | Stories by LSD Wedding Photography`}
+                title={`${projectTitle} | Stories by LSD Wedding Photography India`}
                 description={projectDesc}
                 canonical={projectCanonical}
                 ogImage={projectImg}
@@ -98,7 +98,7 @@ const ProjectDetails = () => {
                     <ImageWithLoader
                         src={project.heroImage?.url || project.heroImage}
                         lowResSrc={project.heroImageLowRes?.url || project.heroImageLowRes}
-                        alt={`${project.title || 'Wedding Story'} - Candid Wedding Photography Chennai by Stories by LSD`}
+                        alt={`${project.title || 'Wedding Story'} - Candid Wedding Photography India by Stories by LSD`}
                         className="w-full h-full"
                         imgClassName="w-full h-full object-cover"
                     />
@@ -150,7 +150,7 @@ const ProjectDetails = () => {
                                 <ImageWithLoader
                                     src={img?.url || img}
                                     lowResSrc={lowResImg}
-                                    alt={`${project.title || 'Wedding'} Photography Moment ${index + 1} | Stories by LSD Chennai`}
+                                    alt={`${project.title || 'Wedding'} Photography Moment ${index + 1} | Stories by LSD India`}
                                     imgClassName="hover:opacity-95 transition-opacity duration-300"
                                     loading="lazy"
                                 />

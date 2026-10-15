@@ -230,8 +230,8 @@ const Home = () => {
     return (
         <MainLayout>
             <SEO 
-                title="Stories by LSD | Candid Wedding Photography & Films | Chennai"
-                description="Stories by LSD is a premier wedding photography and cinematic films team in Chennai. Capturing authentic emotions, timeless wedding stories, and joyful celebrations."
+                title="Stories by LSD | Luxury Candid Wedding Photography & Films | India"
+                description="Stories by LSD is a premier candid wedding photography and cinematic films team capturing authentic emotions, timeless wedding stories, and luxury celebrations across India and worldwide."
                 canonical="https://www.storiesbylsd.com/"
             />
             {/* Hero Section - Loads instantly on mount with High-Priority Thumbnail/Poster */}
@@ -245,7 +245,7 @@ const Home = () => {
                     >
                         <img
                             src={heroThumbUrl}
-                            alt="Stories by LSD Candid Wedding Photography & Films Chennai"
+                            alt="Stories by LSD Luxury Candid Wedding Photography & Films India"
                             fetchPriority="high"
                             loading="eager"
                             decoding="async"
