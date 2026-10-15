@@ -8,7 +8,7 @@ const Footer = () => {
 
                 {/* Logo */}
                 <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20">
-                    <img src={footerLogo} alt="LSD Logo" className="w-full h-full object-contain" />
+                    <img src={footerLogo} alt="Stories by LSD Emblem" className="w-full h-full object-contain" />
                 </div>
 
                 {/* Social Icons */}
@@ -45,9 +45,14 @@ const Footer = () => {
                     <p>+91 91766 10832 &nbsp;|&nbsp; lsdproduction123@gmail.com</p>
                 </div>
 
-                {/* Copyright */}
-                <div className="text-center text-white/75 text-[10px] sm:text-xs font-light pt-2 sm:pt-4">
-                    <p>© {new Date().getFullYear()} by LSD Production</p>
+                {/* Brand Entity Description & Copyright */}
+                <div className="text-center text-white/70 space-y-1.5 pt-2 sm:pt-4 max-w-xl mx-auto">
+                    <p className="text-[10px] sm:text-xs font-light leading-relaxed">
+                        Stories by LSD is a luxury wedding photography & cinematography studio founded by LSD Production, capturing timeless candid love stories across India and worldwide.
+                    </p>
+                    <p className="text-[9px] sm:text-[10px] text-white/50 tracking-wider uppercase">
+                        © {new Date().getFullYear()} Stories by LSD • All Rights Reserved
+                    </p>
                 </div>
 
             </div>
