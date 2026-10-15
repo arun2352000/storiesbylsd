@@ -4,8 +4,8 @@ import MainLayout from '../layouts/MainLayout';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import SEO from '../components/common/SEO';
-import heroBackground from '../assets/image/Backgrou image/AND03973 1.png';
-import howWeWorkBg from '../assets/image/Backgrou image/Layer 1 1.png';
+import heroBackground from '../assets/image/Backgrou image/AND03973 1.webp';
+import howWeWorkBg from '../assets/image/Backgrou image/Layer 1 1.webp';
 
 const DEFAULT_TEAM_MEMBERS = [
     { id: 'tm_1', name: 'ISHVAR', role: 'Photographer', image: null },

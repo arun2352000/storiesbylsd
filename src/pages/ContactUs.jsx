@@ -1,6 +1,6 @@
 import React from 'react';
 import MainLayout from '../layouts/MainLayout';
-import backgroundImage from '../assets/image/Backgrou image/image 2.png';
+import backgroundImage from '../assets/image/Backgrou image/image 2.webp';
 import ContactForm from '../components/common/ContactForm';
 import SEO from '../components/common/SEO';
 

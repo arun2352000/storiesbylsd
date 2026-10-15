@@ -5,7 +5,7 @@ import MainLayout from '../layouts/MainLayout';
 import Card from '../components/common/Card';
 import { api } from '../services/api';
 import SEO from '../components/common/SEO';
-import backgroundImage from '../assets/image/Backgrou image/image 2.png';
+import backgroundImage from '../assets/image/Backgrou image/image 2.webp';
 
 const Photography = () => {
     const navigate = useNavigate();

@@ -11,7 +11,7 @@ import ImageFolio from '../components/home/ImageFolio';
 import AboutUsPreview from '../components/home/AboutUsPreview';
 import ContactForm from '../components/common/ContactForm';
 import SEO from '../components/common/SEO';
-import contactBg from '../assets/image/Backgrou image/image 2.png';
+import contactBg from '../assets/image/Backgrou image/image 2.webp';
 
 
 const Home = () => {
@@ -234,6 +234,10 @@ const Home = () => {
                 description="Stories by LSD is a premier candid wedding photography and cinematic films team capturing authentic emotions, timeless wedding stories, and luxury celebrations across India and worldwide."
                 canonical="https://www.storiesbylsd.com/"
             />
+            {/* Primary Semantic H1 for search engines & accessibility */}
+            <h1 className="sr-only">
+                Stories by LSD | Luxury Candid Wedding Photography & Films India
+            </h1>
             {/* Hero Section - Loads instantly on mount with High-Priority Thumbnail/Poster */}
             <section className="relative h-screen w-full bg-[#424530] overflow-hidden group">
                 {/* Hero Title Poster: Rendered with high priority to show immediately before video plays */}
