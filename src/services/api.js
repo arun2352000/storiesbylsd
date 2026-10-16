@@ -68,7 +68,7 @@ export const api = {
         }
     },
 
-    // Get all films
+    // Get all films (sorted by display order)
     getAllFilms: async () => {
         try {
             const response = await fetch(`${AALY_BASE_URL}/films/public`);
@@ -76,7 +76,13 @@ export const api = {
                 throw new Error('Failed to fetch films');
             }
             const data = await response.json();
-            return data.items || [];
+            const items = data.items || [];
+            return items.sort((a, b) => {
+                const orderA = (a.order !== undefined && a.order !== null) ? Number(a.order) : 999999;
+                const orderB = (b.order !== undefined && b.order !== null) ? Number(b.order) : 999999;
+                if (orderA !== orderB) return orderA - orderB;
+                return new Date(b.date || b._createdAt || 0) - new Date(a.date || a._createdAt || 0);
+            });
         } catch (error) {
             console.error('API failed:', error);
             return [];

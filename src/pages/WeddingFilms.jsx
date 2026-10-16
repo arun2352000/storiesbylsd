@@ -102,8 +102,8 @@ const WeddingFilms = () => {
                                 title={film.title}
                                 date={film.date}
                                 videoUrl={film.videoUrl}
-                                image={film.thumbnail?.url || (typeof film.thumbnail === 'string' ? film.thumbnail : '')}
-                                lowResImage={film.thumbnailLowRes?.url || film.thumbnailLowRes}
+                                image={film.thumbnail?.url || film.thumbnail?.downloadUrl || (typeof film.thumbnail === 'string' ? film.thumbnail : '')}
+                                lowResImage={film.thumbnailLowRes?.url || film.thumbnailLowRes?.downloadUrl || (typeof film.thumbnailLowRes === 'string' ? film.thumbnailLowRes : '')}
                                 className="h-[35vh] sm:h-[45vh] md:h-[60vh]"
                                 onClick={() => handleVideoClick(film)}
                             />

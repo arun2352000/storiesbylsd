@@ -228,7 +228,13 @@ export const adminApi = {
     getFilms: async () => {
         const res = await fetchWithAuth(`${AALY_BASE_URL}/films/public`, { headers: getAuthHeaders() });
         if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
-        return (await res.json()).items || [];
+        const items = (await res.json()).items || [];
+        return items.sort((a, b) => {
+            const orderA = (a.order !== undefined && a.order !== null) ? Number(a.order) : 999999;
+            const orderB = (b.order !== undefined && b.order !== null) ? Number(b.order) : 999999;
+            if (orderA !== orderB) return orderA - orderB;
+            return new Date(b.date || b._createdAt || 0) - new Date(a.date || a._createdAt || 0);
+        });
     },
     createFilm: async (data) => {
         const res = await fetchWithAuth(`${AALY_BASE_URL}/films`, {
@@ -237,6 +243,18 @@ export const adminApi = {
             body: JSON.stringify(data)
         });
         if (!res.ok) throw new Error('Failed to create film');
+        return await res.json();
+    },
+    updateFilm: async (id, data) => {
+        const res = await fetchWithAuth(`${AALY_BASE_URL}/films/${id}`, {
+            method: 'PATCH',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`Failed to update film: ${errText}`);
+        }
         return await res.json();
     },
     deleteFilm: async (id) => {
