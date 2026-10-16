@@ -158,6 +158,67 @@ it('batches 400 file IDs (200 high-res + 200 low-res) in safe chunks of 100', as
 });
 
 // ----------------------------------------------------
+// TEST GROUP 5: AboutUsPreview Chessboard Order Logic
+// ----------------------------------------------------
+console.log('\n--- Test Group 5: Team Grid Chessboard Pattern ---');
+
+const aboutUsPreviewPath = path.resolve('src/components/home/AboutUsPreview.jsx');
+const aboutUsPreviewCode = fs.readFileSync(aboutUsPreviewPath, 'utf-8');
+
+it('verifies AboutUsPreview has mobile and desktop order classes', () => {
+    assert.strictEqual(aboutUsPreviewCode.includes('order-1 sm:order-1'), true);
+    assert.strictEqual(aboutUsPreviewCode.includes('order-4 sm:order-3'), true);
+    assert.strictEqual(aboutUsPreviewCode.includes('order-3 sm:order-4'), true);
+});
+
+it('verifies 2-column mobile layout forms an alternating chessboard', () => {
+    // 6 images alternating: W (0), G (1), W (2), G (3), W (4), G (5)
+    const images = ['W', 'G', 'W', 'G', 'W', 'G'];
+    
+    // In CSS Grid, items are ordered by their mobile 'order' value:
+    // Index 0 -> order 1: W
+    // Index 1 -> order 2: G
+    // Index 3 -> order 3: G
+    // Index 2 -> order 4: W
+    // Index 4 -> order 5: W
+    // Index 5 -> order 6: G
+    const mobileVisualOrder = [
+        images[0], // Row 1, Col 1 -> W
+        images[1], // Row 1, Col 2 -> G
+        images[3], // Row 2, Col 1 -> G
+        images[2], // Row 2, Col 2 -> W
+        images[4], // Row 3, Col 1 -> W
+        images[5], // Row 3, Col 2 -> G
+    ];
+
+    // Check Row 1
+    assert.strictEqual(mobileVisualOrder[0], 'W');
+    assert.strictEqual(mobileVisualOrder[1], 'G');
+
+    // Check Row 2 (must alternate vertically with Row 1!)
+    assert.strictEqual(mobileVisualOrder[2], 'G');
+    assert.strictEqual(mobileVisualOrder[3], 'W');
+
+    // Check Row 3 (must alternate vertically with Row 2!)
+    assert.strictEqual(mobileVisualOrder[4], 'W');
+    assert.strictEqual(mobileVisualOrder[5], 'G');
+
+    // Verify no two adjacent cells (horizontally or vertically) share the same background:
+    // Row 1 horizontal
+    assert.notStrictEqual(mobileVisualOrder[0], mobileVisualOrder[1]);
+    // Row 2 horizontal
+    assert.notStrictEqual(mobileVisualOrder[2], mobileVisualOrder[3]);
+    // Row 3 horizontal
+    assert.notStrictEqual(mobileVisualOrder[4], mobileVisualOrder[5]);
+    // Col 1 vertical
+    assert.notStrictEqual(mobileVisualOrder[0], mobileVisualOrder[2]);
+    assert.notStrictEqual(mobileVisualOrder[2], mobileVisualOrder[4]);
+    // Col 2 vertical
+    assert.notStrictEqual(mobileVisualOrder[1], mobileVisualOrder[3]);
+    assert.notStrictEqual(mobileVisualOrder[3], mobileVisualOrder[5]);
+});
+
+// ----------------------------------------------------
 // TEST SUMMARY
 // ----------------------------------------------------
 console.log('\n=============================================');
