@@ -361,7 +361,7 @@ const AdminDashboard = () => {
     const [reorderLowResImages, setReorderLowResImages] = useState([]);
     const [isSavingOrder, setIsSavingOrder] = useState(false);
 
-    // States for 100-Image Selection
+    // States for 200-Image Selection
     const [pendingSelectionImages, setPendingSelectionImages] = useState(null);
     const [selectedSelectionIndices, setSelectedSelectionIndices] = useState(new Set());
 
@@ -1227,9 +1227,9 @@ const AdminDashboard = () => {
 
             setPortfolioImages(prev => {
                 const combined = [...prev, ...allExtractedImages];
-                if (combined.length > 100) {
-                    toast.warning(`Maximum 100 images allowed per portfolio. Automatically trimmed ${combined.length - 100} extra images.`);
-                    return combined.slice(0, 100);
+                if (combined.length > 200) {
+                    toast.warning(`Maximum 200 images allowed per portfolio. Automatically trimmed ${combined.length - 200} extra images.`);
+                    return combined.slice(0, 200);
                 }
                 return combined;
             });
@@ -2447,7 +2447,7 @@ const AdminDashboard = () => {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl flex flex-col max-h-[90vh]">
                         <div className="p-5 border-b">
                             <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-xl font-bold">Select Images (Max 100)</h3>
+                                <h3 className="text-xl font-bold">Select Images (Max 200)</h3>
                                 <button onClick={() => {
                                     setPendingSelectionImages(null);
                                     setSelectedSelectionIndices(new Set());
@@ -2456,12 +2456,12 @@ const AdminDashboard = () => {
                                 </button>
                             </div>
                             <p className="text-sm text-gray-500">
-                                You dropped {pendingSelectionImages.length} images, but the gallery is limited to 100 total images.
+                                You dropped {pendingSelectionImages.length} images, but the gallery is limited to 200 total images.
                                 You currently have {portfolioImages.length} images already in the gallery.
-                                Please select up to {100 - portfolioImages.length} images to import.
+                                Please select up to {200 - portfolioImages.length} images to import.
                             </p>
                             <div className="mt-3 flex justify-between items-center bg-gray-50 p-3 rounded-lg border">
-                                <span className="text-sm font-medium">Selected: {selectedSelectionIndices.size} / {100 - portfolioImages.length}</span>
+                                <span className="text-sm font-medium">Selected: {selectedSelectionIndices.size} / {200 - portfolioImages.length}</span>
                                 <div className="space-x-3">
                                     <button 
                                         onClick={() => setSelectedSelectionIndices(new Set())}
@@ -2480,7 +2480,7 @@ const AdminDashboard = () => {
                                         item={img}
                                         index={index}
                                         isSelected={selectedSelectionIndices.has(index)}
-                                        disabled={selectedSelectionIndices.size >= (100 - portfolioImages.length)}
+                                        disabled={selectedSelectionIndices.size >= (200 - portfolioImages.length)}
                                         onToggle={(idx) => {
                                             setSelectedSelectionIndices(prev => {
                                                 const next = new Set(prev);

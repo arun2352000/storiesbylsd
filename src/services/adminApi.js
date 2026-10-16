@@ -163,10 +163,18 @@ export const adminApi = {
 
     getFiles: async (ids) => {
         if (!ids || ids.length === 0) return [];
-        const idString = ids.join(',');
-        const res = await fetchWithAuth(`${AALY_BASE_URL}/files?id=${idString}&presign=true&limit=200`, { headers: getAuthHeaders() });
-        if (!res.ok) throw new Error('Failed to fetch files');
-        return (await res.json()).items || [];
+        // Batch in chunks of 100 to ensure URL length safety and full hydration of up to 200+ images
+        const chunkSize = 100;
+        const results = [];
+        for (let i = 0; i < ids.length; i += chunkSize) {
+            const chunk = ids.slice(i, i + chunkSize);
+            const idString = chunk.join(',');
+            const res = await fetchWithAuth(`${AALY_BASE_URL}/files?id=${idString}&presign=true&limit=200`, { headers: getAuthHeaders() });
+            if (!res.ok) throw new Error('Failed to fetch files');
+            const data = await res.json();
+            if (data.items) results.push(...data.items);
+        }
+        return results;
     },
     deleteFile: async (id) => {
         if (!id) return;

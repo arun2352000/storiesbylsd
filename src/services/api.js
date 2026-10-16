@@ -18,7 +18,7 @@ export const api = {
         }
     },
 
-    // Get single project by ID using the new detail endpoint to fetch fully hydrated 100 images
+    // Get single project by ID using the detail endpoint to fetch fully hydrated images (up to 200)
     getProjectById: async (id) => {
         try {
             const response = await fetch(`${AALY_BASE_URL}/portfolio_items/public-detail`, {
