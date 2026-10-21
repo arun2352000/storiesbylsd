@@ -376,6 +376,13 @@ const AdminDashboard = () => {
     const [newFilm, setNewFilm] = useState({ title: '', date: '', videoUrl: '' });
     const [filmThumbnail, setFilmThumbnail] = useState(null);
 
+    // States for Editing Wedding Film
+    const [editingFilm, setEditingFilm] = useState(null);
+    const [editFilmData, setEditFilmData] = useState({ title: '', date: '', videoUrl: '' });
+    const [editFilmThumbnail, setEditFilmThumbnail] = useState(null);
+    const [editFilmThumbnailPreview, setEditFilmThumbnailPreview] = useState(null);
+    const [isSavingFilm, setIsSavingFilm] = useState(false);
+
     useEffect(() => {
         if (!adminApi.isAuthenticated()) {
             navigate('/admin/login');
@@ -1132,6 +1139,82 @@ const AdminDashboard = () => {
         }
     };
 
+    const openEditFilmModal = (film) => {
+        setEditingFilm(film);
+        setEditFilmData({
+            title: film.title || '',
+            date: film.date ? new Date(film.date).toISOString().split('T')[0] : '',
+            videoUrl: film.videoUrl || ''
+        });
+        setEditFilmThumbnail(null);
+        const existingThumbUrl = film.thumbnail?.url || film.thumbnail?.downloadUrl || (typeof film.thumbnail === 'string' ? film.thumbnail : '');
+        setEditFilmThumbnailPreview(existingThumbUrl);
+    };
+
+    const closeEditFilmModal = () => {
+        if (isSavingFilm) return;
+        setEditingFilm(null);
+        setEditFilmThumbnail(null);
+        if (editFilmThumbnailPreview && editFilmThumbnailPreview.startsWith('blob:')) {
+            URL.revokeObjectURL(editFilmThumbnailPreview);
+        }
+        setEditFilmThumbnailPreview(null);
+    };
+
+    const handleEditFilmThumbnailChange = (file) => {
+        if (!file) return;
+        setEditFilmThumbnail(file);
+        const previewUrl = URL.createObjectURL(file);
+        setEditFilmThumbnailPreview(previewUrl);
+    };
+
+    const handleSaveFilmEdit = async (e) => {
+        if (e) e.preventDefault();
+        if (!editingFilm || isSavingFilm) return;
+
+        setIsSavingFilm(true);
+        const toastId = toast.loading("Saving wedding film changes...");
+        try {
+            let updatePayload = {
+                title: editFilmData.title,
+                date: editFilmData.date,
+                videoUrl: editFilmData.videoUrl
+            };
+
+            if (editFilmThumbnail) {
+                toast.update(toastId, { render: "Optimizing new thumbnail..." });
+                const webpThumb = await convertToWebP(editFilmThumbnail);
+                const webpThumbLowRes = await convertToLowResWebP(editFilmThumbnail);
+
+                toast.update(toastId, { render: "Uploading new thumbnail..." });
+                const upThumb = await adminApi.uploadFile(webpThumb);
+                const upThumbLow = await adminApi.uploadFile(webpThumbLowRes);
+
+                updatePayload.thumbnail = { id: upThumb.id };
+                updatePayload.thumbnailLowRes = { id: upThumbLow.id };
+
+                if (editingFilm.thumbnail?.id) {
+                    adminApi.deleteFile(editingFilm.thumbnail.id).catch(() => {});
+                }
+                if (editingFilm.thumbnailLowRes?.id) {
+                    adminApi.deleteFile(editingFilm.thumbnailLowRes.id).catch(() => {});
+                }
+            }
+
+            toast.update(toastId, { render: "Updating film details..." });
+            await adminApi.updateFilm(editingFilm.id, updatePayload);
+
+            toast.update(toastId, { render: "Wedding film updated successfully!", type: "success", isLoading: false, autoClose: 3000 });
+            closeEditFilmModal();
+            await loadData();
+        } catch (err) {
+            console.error("Error updating film:", err);
+            toast.update(toastId, { render: `Failed to update film: ${err.message || 'Unknown error'}`, type: "error", isLoading: false, autoClose: 4000 });
+        } finally {
+            setIsSavingFilm(false);
+        }
+    };
+
     const handleDeleteMessage = async (id) => {
         if (window.confirm('Are you sure?')) {
             await adminApi.deleteMessage(id);
@@ -1799,6 +1882,20 @@ const AdminDashboard = () => {
                                                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
                                                             </button>
                                                         </div>
+
+                                                        {/* Quick Edit Thumbnail Button */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); openEditFilmModal(film); }}
+                                                            className="absolute bottom-2 right-2 z-20 px-2.5 py-1 bg-black/75 hover:bg-black text-white text-[11px] font-semibold rounded-md backdrop-blur-md flex items-center gap-1.5 transition-all shadow-md hover:scale-105 border border-white/20"
+                                                            title="Change thumbnail image"
+                                                        >
+                                                            <svg className="w-3.5 h-3.5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            </svg>
+                                                            Edit Thumbnail
+                                                        </button>
                                                     </div>
                                                     <div className="p-5 flex-1 flex flex-col">
                                                         <div className="flex items-start justify-between gap-2 mb-1">
@@ -1832,10 +1929,25 @@ const AdminDashboard = () => {
                                                                     Move Down
                                                                 </button>
                                                             </div>
-                                                            <button onClick={() => handleDeleteFilm(film.id)} className="text-xs font-medium text-red-600 hover:text-red-800 transition-colors flex items-center gap-1 py-1 px-2 rounded hover:bg-red-50">
-                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                                                Delete
-                                                            </button>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={() => openEditFilmModal(film)} 
+                                                                    className="text-xs font-medium text-indigo-700 hover:text-indigo-900 transition-colors flex items-center gap-1 py-1 px-2.5 rounded-lg bg-indigo-50 hover:bg-indigo-100"
+                                                                    title="Edit film details & thumbnail"
+                                                                >
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                                    Edit
+                                                                </button>
+                                                                <button 
+                                                                    type="button"
+                                                                    onClick={() => handleDeleteFilm(film.id)} 
+                                                                    className="text-xs font-medium text-red-600 hover:text-red-800 transition-colors flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-red-50"
+                                                                >
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                                                    Delete
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2679,6 +2791,164 @@ const AdminDashboard = () => {
                                 Confirm Selection ({selectedSelectionIndices.size})
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+
+            {/* Edit Wedding Film Modal */}
+            {editingFilm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm overflow-y-auto">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh] overflow-hidden my-auto">
+                        {/* Modal Header */}
+                        <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-bold text-gray-900">Edit Wedding Film</h3>
+                                    <p className="text-xs text-gray-500">Update thumbnail image and video details</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={closeEditFilmModal}
+                                disabled={isSavingFilm}
+                                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <form onSubmit={handleSaveFilmEdit} className="p-6 overflow-y-auto space-y-5">
+                            {/* Thumbnail Section */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                                    Film Thumbnail
+                                </label>
+                                <div className="relative group rounded-xl overflow-hidden border-2 border-dashed border-gray-300 hover:border-indigo-400 bg-gray-900 transition-all aspect-video flex items-center justify-center">
+                                    {editFilmThumbnailPreview ? (
+                                        <img 
+                                            src={editFilmThumbnailPreview} 
+                                            alt="Film Thumbnail Preview" 
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="text-center p-4">
+                                            <svg className="w-10 h-10 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                            <span className="text-xs text-gray-300">No thumbnail selected</span>
+                                        </div>
+                                    )}
+
+                                    {/* Overlay with file input */}
+                                    <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer flex flex-col items-center justify-center text-white gap-2 backdrop-blur-[2px]">
+                                        <svg className="w-8 h-8 text-white drop-shadow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                        </svg>
+                                        <span className="text-xs font-semibold px-3 py-1 bg-white/20 rounded-full backdrop-blur-md">
+                                            Click to Upload New Image
+                                        </span>
+                                        <span className="text-[10px] text-gray-300">PNG, JPG, WebP up to 10MB</span>
+                                        <input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            className="hidden" 
+                                            onChange={(e) => {
+                                                if (e.target.files && e.target.files[0]) {
+                                                    handleEditFilmThumbnailChange(e.target.files[0]);
+                                                }
+                                            }} 
+                                        />
+                                    </label>
+                                </div>
+
+                                {editFilmThumbnail && (
+                                    <div className="mt-2 flex items-center justify-between text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100">
+                                        <span className="truncate max-w-[280px]">Selected: <strong>{editFilmThumbnail.name}</strong></span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setEditFilmThumbnail(null);
+                                                const orig = editingFilm.thumbnail?.url || editingFilm.thumbnail?.downloadUrl || (typeof editingFilm.thumbnail === 'string' ? editingFilm.thumbnail : '');
+                                                setEditFilmThumbnailPreview(orig);
+                                            }}
+                                            className="text-indigo-900 font-semibold hover:underline ml-2"
+                                        >
+                                            Revert
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Film Title */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Film Title</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={editFilmData.title}
+                                    onChange={(e) => setEditFilmData({ ...editFilmData, title: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                    placeholder="e.g. A Beautiful Journey"
+                                />
+                            </div>
+
+                            {/* Date */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={editFilmData.date}
+                                    onChange={(e) => setEditFilmData({ ...editFilmData, date: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                />
+                            </div>
+
+                            {/* YouTube / Vimeo URL */}
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-700 mb-1.5">YouTube / Vimeo URL</label>
+                                <input
+                                    type="url"
+                                    required
+                                    value={editFilmData.videoUrl}
+                                    onChange={(e) => setEditFilmData({ ...editFilmData, videoUrl: e.target.value })}
+                                    className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                    placeholder="https://..."
+                                />
+                            </div>
+
+                            {/* Modal Footer */}
+                            <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={closeEditFilmModal}
+                                    disabled={isSavingFilm}
+                                    className="px-4 py-2 border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingFilm}
+                                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition-all shadow-md hover:shadow-lg disabled:opacity-50 flex items-center gap-1.5"
+                                >
+                                    {isSavingFilm ? (
+                                        <>
+                                            <svg className="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                            </svg>
+                                            Saving Changes...
+                                        </>
+                                    ) : (
+                                        'Save Changes'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
