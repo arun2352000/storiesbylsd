@@ -200,7 +200,11 @@ export const adminApi = {
             headers: getAuthHeaders(),
             body: JSON.stringify(data)
         });
-        if (!res.ok) throw new Error('Failed to create portfolio item');
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error("Aaly API Error (POST portfolio):", errText);
+            throw new Error(`Failed to create portfolio item: ${errText}`);
+        }
         return await res.json();
     },
     deletePortfolioItem: async (id) => {
