@@ -54,7 +54,13 @@ const ProjectDetails = () => {
 
     const projectTitle = project.title || 'Wedding Story';
     const projectDesc = project.subtitle || project.description || `Explore the heartfelt wedding moments and candid photography of ${projectTitle} by Stories by LSD.`;
-    const projectImg = project.heroImage?.url || project.heroImage;
+    const getImageUrl = (item) => {
+        if (!item) return '';
+        if (typeof item === 'string') return item;
+        return item.url || item.downloadUrl || '';
+    };
+
+    const projectImg = getImageUrl(project.heroImage);
     const projectCanonical = `https://www.storiesbylsd.com/project/${id}`;
 
     const breadcrumbSchema = {
@@ -96,8 +102,8 @@ const ProjectDetails = () => {
             <section className="relative h-screen w-full overflow-hidden">
                 <div className="absolute inset-0">
                     <ImageWithLoader
-                        src={project.heroImage?.url || project.heroImage}
-                        lowResSrc={project.heroImageLowRes?.url || project.heroImageLowRes}
+                        src={getImageUrl(project.heroImage)}
+                        lowResSrc={getImageUrl(project.heroImageLowRes)}
                         alt={`${project.title || 'Wedding Story'} - Candid Wedding Photography India by Stories by LSD`}
                         className="w-full h-full"
                         imgClassName="w-full h-full object-cover"
@@ -142,13 +148,13 @@ const ProjectDetails = () => {
                 >
                     {project.images && project.images.map((img, index) => {
                         const lowResImg = project.imagesLowRes && project.imagesLowRes[index] 
-                            ? (project.imagesLowRes[index]?.url || project.imagesLowRes[index]) 
+                            ? getImageUrl(project.imagesLowRes[index]) 
                             : null;
                         
                         return (
                             <div key={index} className="break-inside-avoid">
                                 <ImageWithLoader
-                                    src={img?.url || img}
+                                    src={getImageUrl(img)}
                                     lowResSrc={lowResImg}
                                     alt={`${project.title || 'Wedding'} Photography Moment ${index + 1} | Stories by LSD India`}
                                     imgClassName="hover:opacity-95 transition-opacity duration-300"
