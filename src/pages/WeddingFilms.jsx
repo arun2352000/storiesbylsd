@@ -5,7 +5,7 @@ import VideoCard from '../components/common/VideoCard';
 import VideoModal from '../components/common/VideoModal';
 import { api } from '../services/api';
 import SEO from '../components/common/SEO';
-import backgroundImage from '../assets/image/Backgrou image/image 2.webp';
+import backgroundImage from '../assets/image/Backgrou image/SGP4838.webp';
 
 const WeddingFilms = () => {
     const [films, setFilms] = useState([]);
