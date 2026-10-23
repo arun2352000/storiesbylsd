@@ -1,159 +1,132 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Masonry from 'react-masonry-css';
 
 const ImageFolio = ({ images }) => {
     if (!images || images.length === 0) return null;
 
-    // Limit to 18 images (between 15 and 20 as requested)
-    const displayImages = images.slice(0, 18);
+    // Show all configured folio images (or up to 24)
+    const displayImages = images.slice(0, 24);
+    const [lightboxIndex, setLightboxIndex] = useState(null);
 
-    // Single photo tile for Desktop fixed-height collage blocks
-    const renderDesktopTile = (img, index, className = '', heightStyle = {}) => {
-        if (!img) return null;
-        return (
-            <div 
-                key={img.id || index} 
-                className={`relative overflow-hidden group bg-[#383a29] ${className}`}
-                style={heightStyle}
-            >
-                <img 
-                    src={img.url || img.downloadUrl} 
-                    alt={`Stories by LSD Candid Wedding Photography India - Portfolio Moment ${index + 1}`} 
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 pointer-events-none" />
-            </div>
-        );
-    };
-
-    // Single photo tile for Mobile/Tablet natural vertical flow (zero gaps, true masonry)
-    const renderFlowTile = (img, index) => {
-        if (!img) return null;
-        return (
-            <div 
-                key={img.id || index} 
-                className="relative overflow-hidden group w-full mb-0.5 sm:mb-1"
-            >
-                <img 
-                    src={img.url || img.downloadUrl} 
-                    alt={`Stories by LSD Candid Wedding Photography India - Portfolio Moment ${index + 1}`} 
-                    className="w-full h-auto object-cover block transition-transform duration-700 ease-out group-hover:scale-105"
-                    loading="lazy"
-                    decoding="async"
-                />
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-300 pointer-events-none" />
-            </div>
-        );
-    };
-
-    // 1. Desktop Block A (10 images - exact Wix layout matching lsdproductions.in)
-    const renderBlockA = (chunk, startIndex) => {
-        return (
-            <div key={`block-a-${startIndex}`} className="flex flex-row w-full h-[540px] lg:h-[650px] overflow-hidden gap-0">
-                {/* Column 1 (18%): 2 vertical stacked photos */}
-                <div className="flex flex-col w-[18%] h-full">
-                    {renderDesktopTile(chunk[0], startIndex + 0, "w-full h-[60%]")}
-                    {renderDesktopTile(chunk[1], startIndex + 1, "w-full h-[40%]")}
-                </div>
-
-                {/* Column 2 (32%): 1 top landscape + 2 bottom side-by-side */}
-                <div className="flex flex-col w-[32%] h-full">
-                    {renderDesktopTile(chunk[2], startIndex + 2, "w-full h-[60%]")}
-                    <div className="flex flex-row w-full h-[40%]">
-                        {renderDesktopTile(chunk[3], startIndex + 3, "w-1/2 h-full")}
-                        {renderDesktopTile(chunk[4], startIndex + 4, "w-1/2 h-full")}
-                    </div>
-                </div>
-
-                {/* Column 3 (20%): 1 full-height tall hero portrait */}
-                <div className="w-[20%] h-full">
-                    {renderDesktopTile(chunk[5], startIndex + 5, "w-full h-full")}
-                </div>
-
-                {/* Column 4 (15%): 2 vertical stacked photos */}
-                <div className="flex flex-col w-[15%] h-full">
-                    {renderDesktopTile(chunk[6], startIndex + 6, "w-full h-[52%]")}
-                    {renderDesktopTile(chunk[7], startIndex + 7, "w-full h-[48%]")}
-                </div>
-
-                {/* Column 5 (15%): 2 vertical stacked photos */}
-                <div className="flex flex-col w-[15%] h-full">
-                    {renderDesktopTile(chunk[8], startIndex + 8, "w-full h-[52%]")}
-                    {renderDesktopTile(chunk[9], startIndex + 9, "w-full h-[48%]")}
-                </div>
-            </div>
-        );
-    };
-
-    // 2. Desktop Block B (Remaining images - 4-column balanced collage)
-    const renderBlockB = (chunk, startIndex) => {
-        if (!chunk || chunk.length === 0) return null;
-        return (
-            <div key={`block-b-${startIndex}`} className="flex flex-row w-full h-[500px] lg:h-[600px] overflow-hidden gap-0">
-                {/* Column 1 (22%): 2 vertical stacked photos */}
-                <div className="flex flex-col w-[22%] h-full">
-                    {renderDesktopTile(chunk[0], startIndex + 0, "w-full h-[50%]")}
-                    {renderDesktopTile(chunk[1], startIndex + 1, "w-full h-[50%]")}
-                </div>
-
-                {/* Column 2 (28%): 1 top landscape + 2 bottom side-by-side */}
-                <div className="flex flex-col w-[28%] h-full">
-                    {renderDesktopTile(chunk[2], startIndex + 2, "w-full h-[55%]")}
-                    <div className="flex flex-row w-full h-[45%]">
-                        {renderDesktopTile(chunk[3], startIndex + 3, chunk[4] ? "w-1/2 h-full" : "w-full h-full")}
-                        {chunk[4] && renderDesktopTile(chunk[4], startIndex + 4, "w-1/2 h-full")}
-                    </div>
-                </div>
-
-                {/* Column 3 (22%): 1 tall hero portrait */}
-                <div className="w-[22%] h-full">
-                    {renderDesktopTile(chunk[5], startIndex + 5, "w-full h-full")}
-                </div>
-
-                {/* Column 4 (28%): 2 vertical stacked photos */}
-                <div className="flex flex-col w-[28%] h-full">
-                    {renderDesktopTile(chunk[6], startIndex + 6, chunk[7] ? "w-full h-[50%]" : "w-full h-full")}
-                    {chunk[7] && renderDesktopTile(chunk[7], startIndex + 7, "w-full h-[50%]")}
-                </div>
-            </div>
-        );
-    };
+    useEffect(() => {
+        if (lightboxIndex === null) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') setLightboxIndex(null);
+            if (e.key === 'ArrowLeft') setLightboxIndex((prev) => (prev > 0 ? prev - 1 : displayImages.length - 1));
+            if (e.key === 'ArrowRight') setLightboxIndex((prev) => (prev < displayImages.length - 1 ? prev + 1 : 0));
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [lightboxIndex, displayImages.length]);
 
     const masonryBreakpointCols = {
-        default: 3,
-        1023: 3,
-        639: 2
+        default: 4,
+        1440: 4,
+        1024: 3,
+        640: 2
     };
 
     return (
-        <section className="w-full bg-[#424530] overflow-hidden select-none">
-            {/* 1. DESKTOP VIEW (>= 1024px): 5-column varied Wix collage */}
-            <div className="hidden lg:flex flex-col w-full gap-0 p-0 m-0">
-                {displayImages.length >= 10 && renderBlockA(displayImages.slice(0, 10), 0)}
-                {displayImages.length > 10 && renderBlockB(displayImages.slice(10), 10)}
-                {displayImages.length < 10 && (
-                    <div className="flex flex-row w-full h-[450px] overflow-hidden gap-0">
-                        {displayImages.map((img, idx) => (
-                            <div key={img.id || idx} className="flex-1 h-full">
-                                {renderDesktopTile(img, idx, "w-full h-full")}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+        <section className="w-full bg-[#424530] p-2 sm:p-3 md:p-4 lg:p-6 overflow-hidden select-none">
+            <Masonry
+                breakpointCols={masonryBreakpointCols}
+                className="flex w-auto gap-2 sm:gap-3 lg:gap-4"
+                columnClassName="flex flex-col gap-2 sm:gap-3 lg:gap-4 bg-clip-padding"
+            >
+                {displayImages.map((img, index) => {
+                    const imgUrl = img?.url || img?.downloadUrl || (typeof img === 'string' ? img : '');
+                    if (!imgUrl) return null;
 
-            {/* 2. MOBILE & TABLET VIEW (< 1024px): Balanced Masonry with ZERO gaps */}
-            <div className="block lg:hidden w-full p-0.5 sm:p-1">
-                <Masonry
-                    breakpointCols={masonryBreakpointCols}
-                    className="flex w-full gap-0.5 sm:gap-1"
-                    columnClassName="flex flex-col gap-0.5 sm:gap-1"
+                    return (
+                        <div 
+                            key={img.id || index}
+                            onClick={() => setLightboxIndex(index)}
+                            className="group relative overflow-hidden rounded-lg bg-[#383a29] cursor-pointer shadow-sm hover:shadow-xl transition-all duration-300"
+                        >
+                            <img 
+                                src={imgUrl} 
+                                alt={`Stories by LSD Candid Wedding Photography India - Portfolio Moment ${index + 1}`} 
+                                className="w-full h-auto block object-contain transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                                loading="lazy"
+                                decoding="async"
+                            />
+                            {/* Hover overlay with subtle zoom indicator */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/25 transition-colors duration-300 pointer-events-none flex items-center justify-center">
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/60 backdrop-blur-sm text-white p-2.5 rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </Masonry>
+
+            {/* Interactive Full-Screen Lightbox Modal */}
+            {lightboxIndex !== null && displayImages[lightboxIndex] && (
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-4 select-none animate-in fade-in duration-200"
+                    onClick={() => setLightboxIndex(null)}
                 >
-                    {displayImages.map((img, idx) => renderFlowTile(img, idx))}
-                </Masonry>
-            </div>
+                    {/* Close Button */}
+                    <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setLightboxIndex(null); }}
+                        className="absolute top-4 right-4 z-50 text-white/80 hover:text-white bg-black/50 hover:bg-black/80 p-2.5 rounded-full transition-all border border-white/20"
+                        title="Close (Esc)"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
+                    {/* Previous Button */}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setLightboxIndex((prev) => (prev > 0 ? prev - 1 : displayImages.length - 1));
+                        }}
+                        className="absolute left-3 sm:left-6 z-50 text-white/80 hover:text-white bg-black/50 hover:bg-black/80 p-3 rounded-full transition-all border border-white/20 hover:scale-110"
+                        title="Previous (Left arrow)"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
+                    {/* Next Button */}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setLightboxIndex((prev) => (prev < displayImages.length - 1 ? prev + 1 : 0));
+                        }}
+                        className="absolute right-3 sm:right-6 z-50 text-white/80 hover:text-white bg-black/50 hover:bg-black/80 p-3 rounded-full transition-all border border-white/20 hover:scale-110"
+                        title="Next (Right arrow)"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
+                    {/* Image Container */}
+                    <div 
+                        className="max-w-[92vw] max-h-[88vh] flex flex-col items-center justify-center relative"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img 
+                            src={displayImages[lightboxIndex].url || displayImages[lightboxIndex].downloadUrl || (typeof displayImages[lightboxIndex] === 'string' ? displayImages[lightboxIndex] : '')} 
+                            alt={`Stories by LSD Wedding Moment ${lightboxIndex + 1}`}
+                            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                        />
+                        <div className="mt-3 text-white/70 text-xs tracking-widest font-light">
+                            {lightboxIndex + 1} / {displayImages.length}
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 };
