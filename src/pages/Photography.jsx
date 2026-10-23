@@ -67,43 +67,37 @@ const Photography = () => {
             </div>
 
             {/* Gallery Section */}
-            <section className="bg-brand-dark p-2">
+            <section className="bg-brand-dark p-3 sm:p-5 md:p-6 lg:p-8">
                 {loading ? (
                     <div className="flex justify-center items-center h-[50vh] text-white">
                         Loading...
                     </div>
                 ) : (
-                    <div className="flex flex-col md:flex-row gap-2">
-                        {/* Left Column */}
-                        <div className="flex flex-col gap-2 w-full md:w-1/2">
-                            {projects.filter((_, i) => i % 2 === 0).map((item, index) => (
-                                <Card
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+                        {projects.map((item, index) => {
+                            // When odd count, premier featured card spans full width for balanced baseline
+                            const isFeatured = projects.length % 2 !== 0 && index === 0;
+                            const cardHeight = isFeatured
+                                ? "h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[75vh]"
+                                : "h-[45vh] sm:h-[55vh] md:h-[62vh] lg:h-[68vh]";
+
+                            return (
+                                <div
                                     key={item.id || item._id || index}
-                                    title={item.title}
-                                    date={item.date}
-                                    alt={`${item.title} - Candid Wedding Photography in India by Stories by LSD`}
-                                    image={item.heroImage?.url || item.heroImage}
-                                    lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
-                                    className={index % 2 === 0 ? "h-[40vh] sm:h-[50vh] md:h-[60vh]" : "h-[60vh] sm:h-[75vh] md:h-[90vh]"}
-                                    onClick={() => navigate(`/project/${item.id || item._id}`)}
-                                />
-                            ))}
-                        </div>
-                        {/* Right Column */}
-                        <div className="flex flex-col gap-2 w-full md:w-1/2">
-                            {projects.filter((_, i) => i % 2 !== 0).map((item, index) => (
-                                <Card
-                                    key={item.id || item._id || index}
-                                    title={item.title}
-                                    date={item.date}
-                                    alt={`${item.title} - Candid Wedding Photography in India by Stories by LSD`}
-                                    image={item.heroImage?.url || item.heroImage}
-                                    lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
-                                    className={index % 2 === 0 ? "h-[60vh] sm:h-[75vh] md:h-[90vh]" : "h-[40vh] sm:h-[50vh] md:h-[60vh]"}
-                                    onClick={() => navigate(`/project/${item.id || item._id}`)}
-                                />
-                            ))}
-                        </div>
+                                    className={isFeatured ? "col-span-1 md:col-span-2" : "col-span-1"}
+                                >
+                                    <Card
+                                        title={item.title}
+                                        date={item.date}
+                                        alt={`${item.title} - Candid Wedding Photography in India by Stories by LSD`}
+                                        image={item.heroImage?.url || item.heroImage}
+                                        lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
+                                        className={`w-full ${cardHeight}`}
+                                        onClick={() => navigate(`/project/${item.id || item._id}`)}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </section>

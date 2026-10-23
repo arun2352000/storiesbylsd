@@ -30,7 +30,7 @@ const ImageWithLoader = ({ src, lowResSrc, alt, className = "", imgClassName = "
                         decoding="async"
                         onLoad={() => setIsLoaded(true)}
                         onError={() => { setIsLoaded(true); setHasError(true); }}
-                        className={`w-full h-auto block transition-all duration-700 ease-in-out relative z-10 ${isLoaded ? 'opacity-100 blur-0' : 'opacity-0'} ${imgClassName}`}
+                        className={`w-full ${imgClassName.includes('h-') ? '' : 'h-auto'} block transition-all duration-700 ease-in-out relative z-10 ${isLoaded ? 'opacity-100 blur-0' : 'opacity-0'} ${imgClassName}`}
                         {...props}
                     />
                 </>

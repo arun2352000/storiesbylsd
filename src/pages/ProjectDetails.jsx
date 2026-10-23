@@ -5,7 +5,7 @@ import Button from '../components/ui/Button';
 import { api } from '../services/api';
 import logoMark from '../assets/image/logo/LogoMark.png';
 import ImageWithLoader from '../components/common/ImageWithLoader';
-import Masonry from 'react-masonry-css';
+import ProjectGallery from '../components/project/ProjectGallery';
 import SEO from '../components/common/SEO';
 
 const ProjectDetails = () => {
@@ -14,6 +14,13 @@ const ProjectDetails = () => {
     const [project, setProject] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [allProjects, setAllProjects] = useState([]);
+
+    useEffect(() => {
+        api.getAllProjects().then(list => {
+            if (Array.isArray(list)) setAllProjects(list);
+        }).catch(err => console.error('Failed to load project list', err));
+    }, []);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -88,6 +95,14 @@ const ProjectDetails = () => {
         ]
     };
 
+    const currentIndex = allProjects.findIndex(p => (p.id || p._id) === id);
+    const prevProject = currentIndex > 0 
+        ? allProjects[currentIndex - 1] 
+        : (allProjects.length > 1 ? allProjects[allProjects.length - 1] : null);
+    const nextProject = currentIndex >= 0 && currentIndex < allProjects.length - 1 
+        ? allProjects[currentIndex + 1] 
+        : (allProjects.length > 1 ? allProjects[0] : null);
+
     return (
         <MainLayout>
             <SEO
@@ -135,53 +150,39 @@ const ProjectDetails = () => {
                 </div>
             </section>
 
-            {/* Masonry Gallery Section */}
-            <section className="w-full bg-[#f5f5f5]">
-                {/* 
-                  Using a grid that adapts to screen size.
-                  For a true masonry layout (staggered), CSS columns are often easiest.
-                 */}
-                <Masonry
-                    breakpointCols={{ default: 3, 1024: 3, 768: 2, 640: 1 }}
-                    className="flex w-auto p-2"
-                    columnClassName="px-1 flex flex-col gap-2"
-                >
-                    {project.images && project.images.map((img, index) => {
-                        const lowResImg = project.imagesLowRes && project.imagesLowRes[index] 
-                            ? getImageUrl(project.imagesLowRes[index]) 
-                            : null;
-                        
-                        return (
-                            <div key={index} className="break-inside-avoid">
-                                <ImageWithLoader
-                                    src={getImageUrl(img)}
-                                    lowResSrc={lowResImg}
-                                    alt={`${project.title || 'Wedding'} Photography Moment ${index + 1} | Stories by LSD India`}
-                                    imgClassName="hover:opacity-95 transition-opacity duration-300"
-                                    loading="lazy"
-                                />
-                            </div>
-                        );
-                    })}
-                </Masonry>
+            {/* Album Gallery Section with Balanced Flush Base & Interactive Lightbox */}
+            <ProjectGallery
+                images={project.images}
+                imagesLowRes={project.imagesLowRes}
+                projectTitle={project.title}
+            />
 
                 {/* Navigation Links at bottom */}
-                <div className="flex justify-between items-center p-8 md:p-16 bg-white">
-                    <button className="uppercase tracking-widest text-xs md:text-sm text-gray-500 hover:text-black transition-colors">
-                        Prev
+                <div className="flex justify-between items-center p-8 md:p-16 bg-white border-t border-gray-200">
+                    <button 
+                        onClick={() => prevProject && navigate(`/project/${prevProject.id || prevProject._id}`)}
+                        disabled={!prevProject}
+                        className="uppercase tracking-widest text-xs md:text-sm text-gray-500 hover:text-black transition-colors disabled:opacity-30 cursor-pointer flex items-center gap-2"
+                    >
+                        <span>←</span>
+                        <span>Prev</span>
                     </button>
                     <Button
-                        onClick={() => navigate('/')}
+                        onClick={() => navigate('/photography')}
                         variant="outline"
                         className="border-black text-black hover:bg-black hover:text-white uppercase tracking-widest text-xs px-8 py-3"
                     >
                         View All
                     </Button>
-                    <button className="uppercase tracking-widest text-xs md:text-sm text-gray-500 hover:text-black transition-colors">
-                        Next
+                    <button 
+                        onClick={() => nextProject && navigate(`/project/${nextProject.id || nextProject._id}`)}
+                        disabled={!nextProject}
+                        className="uppercase tracking-widest text-xs md:text-sm text-gray-500 hover:text-black transition-colors disabled:opacity-30 cursor-pointer flex items-center gap-2"
+                    >
+                        <span>Next</span>
+                        <span>→</span>
                     </button>
                 </div>
-            </section>
         </MainLayout>
     );
 };

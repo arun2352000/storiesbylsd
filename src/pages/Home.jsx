@@ -288,40 +288,35 @@ const Home = () => {
                 <AboutUsPreview teamImages={siteConfig?.teamImages || []} teamGrid={siteConfig?.teamGrid || '2x3'} />
             </ScrollReveal>
 
-            {/* 4. Gallery Section */}
+            {/* 4. Gallery Section (Portfolio Albums) */}
             <ScrollReveal>
-                <section className="bg-brand-dark p-2">
-                    <div className="flex flex-col md:flex-row gap-2">
-                        {/* Left Column */}
-                        <div className="flex flex-col gap-2 w-full md:w-1/2">
-                            {portfolioItems.filter((_, i) => i % 2 === 0).map((item, index) => (
-                                <ScrollReveal key={item.id || index} delay={index * 100}>
-                                    <Card
-                                        title={item.title}
-                                        date={item.date}
-                                        image={item.heroImage?.url || item.heroImage}
-                                        lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
-                                        className={index % 2 === 0 ? "h-[40vh] sm:h-[50vh] md:h-[60vh]" : "h-[60vh] sm:h-[75vh] md:h-[90vh]"}
-                                        onClick={() => navigate(`/project/${item.id || item._id}`)}
-                                    />
-                                </ScrollReveal>
-                            ))}
-                        </div>
-                        {/* Right Column */}
-                        <div className="flex flex-col gap-2 w-full md:w-1/2">
-                            {portfolioItems.filter((_, i) => i % 2 !== 0).map((item, index) => (
-                                <ScrollReveal key={item.id || index} delay={index * 100}>
-                                    <Card
-                                        title={item.title}
-                                        date={item.date}
-                                        image={item.heroImage?.url || item.heroImage}
-                                        lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
-                                        className={index % 2 === 0 ? "h-[60vh] sm:h-[75vh] md:h-[90vh]" : "h-[40vh] sm:h-[50vh] md:h-[60vh]"}
-                                        onClick={() => navigate(`/project/${item.id || item._id}`)}
-                                    />
-                                </ScrollReveal>
-                            ))}
-                        </div>
+                <section className="bg-brand-dark p-3 sm:p-5 md:p-6 lg:p-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 md:gap-6">
+                        {portfolioItems.map((item, index) => {
+                            // If total items is odd, the first item is a featured full-width hero album card
+                            const isFeatured = portfolioItems.length % 2 !== 0 && index === 0;
+                            const cardHeight = isFeatured
+                                ? "h-[50vh] sm:h-[60vh] md:h-[70vh] lg:h-[75vh]"
+                                : "h-[45vh] sm:h-[55vh] md:h-[62vh] lg:h-[68vh]";
+
+                            return (
+                                <div
+                                    key={item.id || item._id || index}
+                                    className={isFeatured ? "col-span-1 md:col-span-2" : "col-span-1"}
+                                >
+                                    <ScrollReveal delay={(index % 4) * 100}>
+                                        <Card
+                                            title={item.title}
+                                            date={item.date}
+                                            image={item.heroImage?.url || item.heroImage}
+                                            lowResImage={item.heroImageLowRes?.url || item.heroImageLowRes}
+                                            className={`w-full ${cardHeight}`}
+                                            onClick={() => navigate(`/project/${item.id || item._id}`)}
+                                        />
+                                    </ScrollReveal>
+                                </div>
+                            );
+                        })}
                     </div>
                 </section>
             </ScrollReveal>
